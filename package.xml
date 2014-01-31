@@ -1,0 +1,20 @@
+<package>
+  <name>dynamic_graph_fcl</name>
+  <version>1.0.0</version>
+  <description>
+	enables a pulling server for FCL's collision checking. This runs as an entity inside the dynamic graph and provides closest distances between two parameters limbs.  
+</description>
+  <maintainer email="karsten.knese@googlemail.com">Karsten Knese</maintainer>
+  <license>BSD</license>
+
+  <author>Karsten Knese </author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>dynamic-graph</build_depend>
+  <build_depend>dynamic-graph-python</build_depend>
+
+  <run_depend>dynamic-graph</run_depend>
+  <run_depend>dynamic-graph-python</run_depend>
+
+</package>
