@@ -40,6 +40,14 @@ int main(void){
                 newEntity("DynamicGraphFCL", "DynamicGraphFCL"));
 
 
+
+//    std::cout << "element 5: " << joint_states_vec.elementAt(5) << std::endl;
+//    dynamicgraph::Signal<dynamicgraph::Vector, int> joint_states;
+//    joint_states->setConstant(joint_states_vec);
+
+//    std::cout << "joint_states init" << std::endl;
+
+
     dynamicgraph::Signal<double, int> *aOut;
     aOut = dynamic_cast<dynamicgraph::Signal<double, int> *>(&(fcl->getSignal("aOUT")));
 
@@ -49,18 +57,21 @@ int main(void){
     dynamicgraph::Signal<double, int>  *zIN = NULL;
     zIN = dynamic_cast<dynamicgraph::Signal<double, int> *>(&(fcl->getSignal("zIN")));
     zIN->setConstant(2.);
-    zIN->recompute(0);
+//    zIN->recompute(0);
 //    zIN->plug(bOut);
     std::cout << "dynamic graph plugged" << std::endl;
 //    stateIn =  dynamic_cast<dynamicgraph::Signal<double, int> *>(&(fcl->getSignal("aOut")));
 
     bOut->recompute(0);
+    aOut ->recompute(0);
     std::cout << "recompute done" << std::endl;
     const double& bOUT1 = bOut->accessCopy();
 
     std::cout << "aOut signal read " << aOut->accessCopy() << std::endl;
     std::cout << "bOut signal read " << bOut->accessCopy() << std::endl;
     std::cout << "bOut1 signal read " << bOUT1 << std::endl;
+
+
     dynamicgraph::PoolStorage::getInstance()->writeGraph("test");
 
 }

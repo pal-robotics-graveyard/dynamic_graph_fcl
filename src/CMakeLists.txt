@@ -13,9 +13,13 @@ message("creating wrapper dir for ${PROJECT_NAME}: ${WRAP_DIR}")
 message("python sitedir : ${PYTHON_SITELIB}")
 file(MAKE_DIRECTORY "${LIBRARY_OUTPUT_PATH}/dynamic_graph/${PROJECT_NAME}")
 
+set(NEW_ENTITY_CLASS
+DynamicGraphFCL
+)
+
 dynamic_graph_python_module("${PROJECT_NAME}"
     ${PROJECT_NAME}
     ${PROJECT_NAME}/wrap
 )
 
-PYTHON_INSTALL("dynamic_graph/${PROJECT_NAME}" "__init__.py" "${PYTHON_SITELIB}")
+#PYTHON_INSTALL("dynamic_graph/${PROJECT_NAME}" "__init__.py" "${PYTHON_SITELIB}")

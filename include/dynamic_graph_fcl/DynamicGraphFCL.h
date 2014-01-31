@@ -40,8 +40,11 @@ public:
     ~DynamicGraphFCL();
 
 
+    boost::shared_ptr< SignalPtr <dynamicgraph::Vector, int> > joint_states_in;
+
     boost::shared_ptr< SignalPtr <double, int> > z_in;
 
+    std::vector<boost::shared_ptr< SignalTimeDependent<double, int> > >signal_vector;
 
     boost::shared_ptr< SignalTimeDependent<double, int> > a_out;
     boost::shared_ptr< SignalTimeDependent<double, int> > b_out;
