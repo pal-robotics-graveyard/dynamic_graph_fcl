@@ -25,6 +25,10 @@
 //#include <dynamic-graph/signal.h>
 #include <dynamic-graph/signal-time-dependent.h>
 #include <dynamic-graph/signal-ptr.h>
+#include <dynamic-graph/factory.h>
+
+#include <dynamic_graph_fcl/URDFParser.h>
+#include <dynamic_graph_fcl/TFBroadcaster.h>
 
 namespace dynamicgraph {
 namespace FCL {
@@ -35,22 +39,56 @@ public:
     virtual const std::string& getClassName (void) const {
         return CLASS_NAME;
     }
-
-    DynamicGraphFCL(const std::string& inName);
+    DynamicGraphFCL(const std::string &inName);
     ~DynamicGraphFCL();
 
 
     boost::shared_ptr< SignalPtr <dynamicgraph::Vector, int> > joint_states_in;
 
-    boost::shared_ptr< SignalPtr <double, int> > z_in;
+    boost::shared_ptr< SignalTimeDependent<dynamicgraph::Vector, int> > joint_states_out;
 
-    std::vector<boost::shared_ptr< SignalTimeDependent<double, int> > >signal_vector;
+    void set_collision_joints(const std::string& joint_collision_names);
+    void init_collisions(const std::vector<std::string>& joint_collision_names);
 
-    boost::shared_ptr< SignalTimeDependent<double, int> > a_out;
-    boost::shared_ptr< SignalTimeDependent<double, int> > b_out;
 
-    double& a_function(double &d, const int& i);
-    double& b_function(double &d, const int& i);
+    dynamicgraph::Vector& joint_state_update_function(dynamicgraph::Vector& vec, int i);
+
+    // critical update function. For the state of the development this gets triggered for each collision pair twice!
+    // optimal solution will be to set a dirty_flag when a recomputation of the FCL distance is actually needed.
+    dynamicgraph::Vector& closest_point_update_function(dynamicgraph::Vector& point, int i, std::string& joint_name_1,int& idx, std::string& joint_name_2, int& idy);
+
+    boost::shared_ptr< SignalTimeDependent<dynamicgraph::Vector, int> > debug_point_1_out;
+    boost::shared_ptr< SignalTimeDependent<dynamicgraph::Vector, int> > debug_point_2_out;
+
+private:
+
+
+    const std::string inName_;
+    std::vector<std::string> joint_collision_names_;
+    int joint_collision_size_;
+
+    boost::shared_ptr< TFBroadcaster> tfBroadcaster_;
+    boost::shared_ptr< URDFParser> urdfParser_;
+
+
+    std::vector<boost::shared_ptr< SignalPtr <dynamicgraph::Matrix, int> > >op_point_in_vec_;
+
+    // length of this vector has to be joint_collision_names^2
+    // idx is determined as it would be in matrix form
+    //
+    // width * i+ j , where i,j are the index of collision_joint_names.
+    // leads to a unique idexing of the collison matrix
+    std::vector<boost::shared_ptr< SignalTimeDependent<dynamicgraph::Vector, int> > >collision_matrix_;
+
+    void initCollisionObjects();
+    void initSignals();
+    void initDebugSignals();
+
+    void fillCollisionMatrix(int idx, int idy);
+
+    void updateURDFParser(const dynamicgraph::Matrix& op_point, int id)const;
+
+
 };
 } // namespace FCL
 } // namespace dynamicgraph

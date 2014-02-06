@@ -18,73 +18,206 @@
  */
 
 #include <math.h>
+#include <dynamic-graph/all-commands.h>
 #include <dynamic-graph/command-setter.h>
 #include <dynamic-graph/command-getter.h>
 #include <dynamic-graph/factory.h>
 
 #include <dynamic_graph_fcl/DynamicGraphFCL.h>
+#include <dynamic_graph_fcl/Conversions.h>
+#include <dynamic_graph_fcl/SignalHelper.h>
+
+#include <ros/ros.h>
 
 namespace dynamicgraph {
 namespace FCL {
 
 DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(DynamicGraphFCL, "DynamicGraphFCL");
 
+typedef SignalTimeDependent < dynamicgraph::Matrix, int > SignalTimeMatrix;
+typedef SignalTimeDependent < dynamicgraph::Vector, int > SignalTimeVector;
+typedef SignalPtr<dynamicgraph::Vector, int > SignalPtrVector;
+typedef SignalPtr<dynamicgraph::Matrix, int > SignalPtrMatrix;
 
-DynamicGraphFCL::DynamicGraphFCL(const std::string& inName) :
+DynamicGraphFCL::DynamicGraphFCL(const std::string &inName):
     Entity(inName),
-    signal_vector(3)
+    inName_(inName),
+    tfBroadcaster_(new TFBroadcaster())
 {
-    z_in = boost::shared_ptr< SignalPtr<double, int > >(new SignalPtr<double,int>(NULL, "DynamicGraphFCL("+inName+")::input(vector)::zIN"));
-    joint_states_in = boost::shared_ptr< SignalPtr<dynamicgraph::Vector, int > >(new SignalPtr<dynamicgraph::Vector,int>(NULL, "DynamicGraphFCL("+inName+")::input(vector)::jointStatesIN"));
+    std::string docstring;
+    docstring =
+            "\n"
+            "    Initializes collisions for fcl\n"
+            "      takes a string of joint names (separated by :) for collision objects \n"
+            "\n";
+    addCommand(std::string("set_collision_joints"),
+               new dynamicgraph::command::Setter<DynamicGraphFCL, std::string >
+               (*this, &DynamicGraphFCL::set_collision_joints, docstring));
 
-    std::cout << "DynamicGraph is getting setup" << z_in.get() << std::endl;
-
-    a_out = boost::shared_ptr<SignalTimeDependent < double, int > >(new SignalTimeDependent < double, int >(*joint_states_in, "DynamicGraphFCL("+inName+")::output(int)::aOUT"));
-    b_out = boost::shared_ptr<SignalTimeDependent < double, int > >(new SignalTimeDependent < double, int >(*z_in, "DynamicGraphFCL("+inName+")::output(int)::bOUT"));
-
-
-    //    b_out("DynamicGraphFCL("+inName+")::ouput(int)::bOUT");
-
-    signalRegistration(*z_in);
-    signalRegistration(*a_out);
-    signalRegistration(*b_out);
-    signalRegistration(*joint_states_in);
-
-    std::vector<std::string> link_names;
-    link_names.push_back("link1");
-    link_names.push_back("link2");
-
-    typedef boost::shared_ptr<SignalTimeDependent < double, int > > SignalDef;
-    for (int var = 0; var < link_names.size(); ++var) {
-        SignalDef tmpSig = SignalDef(new SignalTimeDependent < double, int >(*z_in, "DynamicGraphFCL("+inName+")::output(int)::"+link_names[var]));
-        signalRegistration(*tmpSig);
-
-        signal_vector.push_back(tmpSig);
-    }
-
-    a_out->setConstant(1.);
-    b_out->setConstant(1.);
-    z_in->setConstant(4.);
-    a_out->setFunction(boost::bind(&DynamicGraphFCL::a_function,
-                                   this, _1, _2));
-    b_out->setFunction(boost::bind(&DynamicGraphFCL::b_function,
-                                   this, _1, _2));
 }
 
 DynamicGraphFCL::~DynamicGraphFCL() {}
 
-double& DynamicGraphFCL::a_function(double &d, const int &i){
-     const dynamicgraph::Vector& joint_states = (*joint_states_in)(i);
-     std::cout << "a_function joint 15: " << joint_states.elementAt(15) << "& i " << i << std::endl;
-    return d;
-}
-double& DynamicGraphFCL::b_function(double &d, const int &i){
+/// using a split for a continous string,
+//because ATM I didn't find any other method for passing a vector of strings into an entity
+void DynamicGraphFCL::set_collision_joints(const std::string &joint_collision_names){
+    Conversions::split(joint_collision_names_, joint_collision_names, ':');
+    joint_collision_size_ = joint_collision_names_.size();
+    std::cerr << "amount of collison links found: " << joint_collision_size_ << std::endl;
 
-    const double& zINd =(*z_in)(i);
-
-    std::cout << "b_function got: d" << d << " &i " << i << "& zINd" << zINd << std::endl;
-    return d;
+    initCollisionObjects();
+    initSignals();
+    initDebugSignals();
 }
+
+void DynamicGraphFCL::initCollisionObjects(){
+    urdfParser_.reset(new URDFParser("robot_description", joint_collision_names_));
+    urdfParser_->getCollisionObjects();
+}
+
+/// Signal Declaration
+void DynamicGraphFCL::initSignals(){
+
+    // check out boost function for names !!! copy link name pair into function!
+
+    /// Allocate one input signal for each collision object !!
+    op_point_in_vec_.resize(joint_collision_size_);
+    std::cerr << "op_vec initiliazed" << std::endl;
+    // Allocate n^2 output signal for each collision pair
+    collision_matrix_.resize((joint_collision_size_*joint_collision_size_));
+    std::cerr << "matrix initiliazed" << std::endl;
+
+    for (int joint_idx = 0; joint_idx < joint_collision_size_; ++joint_idx) {
+
+        // for each collision object create one input signal to update the transform of the capsule/mesh
+        op_point_in_vec_[joint_idx] =
+                SignalHelper::createInputSignalMatrix(joint_collision_names_[joint_idx]);
+        signalRegistration(*op_point_in_vec_[joint_idx]);
+        std::cerr << "input signal registrated " << joint_collision_names_[joint_idx] << std::endl;
+    }
+
+    // !! NOTE
+    // this might be optimized as one collision-computation is birectional.
+    // This means that e.g. arm_left & arm_right results in the same computation as arm_right & arm_left
+    // one quick solution can be by introducing a dirty-flag, set or reset when one transform of those two pairs is updated
+    //
+    // compute arm_left & arm_right --> compute both points + return point[0] + reset dirty-flag
+    // compute arm_right & arm_left --> return point[1]
+    // update arm_right OR arm_left transform --> set dirty-flag
+
+    // also cross-initialize all pairs of collision, excluding a pair of itself
+    // IGNORING THE ABOVE NOTE!
+    for (int joint_idx = 0; joint_idx < joint_collision_size_; ++joint_idx) {
+        for (int joint_idy = 0; joint_idy < joint_collision_size_; ++joint_idy) {
+            if (joint_idy != joint_idx){
+
+                fillCollisionMatrix(joint_idx, joint_idy);
+                std::cerr << "matrix filled " << std::endl;
+            }
+        }
+    }
+}
+
+void DynamicGraphFCL::fillCollisionMatrix(int idx, int idy){
+
+    std::string joint_name_1 = joint_collision_names_[idx];
+    std::string joint_name_2 = joint_collision_names_[idy];
+
+    int collision_matrix_idx = idx*joint_collision_size_ + idy;
+
+    boost::shared_ptr<SignalTimeVector> collisionSignal =
+            SignalHelper::createOutputSignalTimeVector(joint_name_1+joint_name_2);
+    collisionSignal->addDependency(*op_point_in_vec_[idx]);
+
+    // might not be initialized yet
+    collisionSignal->addDependency(*op_point_in_vec_[idy]);
+    collisionSignal->setFunction(boost::bind(&DynamicGraphFCL::closest_point_update_function,
+                                             this, _1, _2, joint_name_1, idx, joint_name_2, idy));
+
+    signalRegistration(*collisionSignal);
+    collision_matrix_[collision_matrix_idx] = collisionSignal;
+
+}
+
+void DynamicGraphFCL::initDebugSignals(){
+    std::string debug_point_1 = "DynamicGraphFCL("+inName_+")::output(int)::debugPoint1";
+    debug_point_1_out = boost::shared_ptr<SignalTimeVector>(new SignalTimeVector(NULL, debug_point_1));
+    signalRegistration(*debug_point_1_out);
+
+    std::string debug_point_2 = "DynamicGraphFCL("+inName_+")::output(int)::debugPoint2";
+    debug_point_2_out = boost::shared_ptr<SignalTimeVector>(new SignalTimeVector(NULL, debug_point_2));
+    signalRegistration(*debug_point_2_out);
+
+}
+
+dynamicgraph::Vector& DynamicGraphFCL::closest_point_update_function(
+                    Vector &point, int i,
+                    std::string &joint_name_1, int &idx,
+                    std::string &joint_name_2, int &idy){
+
+
+    if (joint_collision_names_[idx] != joint_name_1){
+        std::cerr << "SOMETHING'S BRUTALLY WRONG HERE" << std::endl;
+    }
+    if (joint_collision_names_[idy] != joint_name_2){
+        std::cerr << "SOMETHING'S BRUTALLY WRONG HERE" << std::endl;
+    }
+
+    // receive the dependent transformation for both joints
+    updateURDFParser(((*op_point_in_vec_[idx])(i)), idx);
+    updateURDFParser(((*op_point_in_vec_[idy])(i)), idy);
+
+
+    fcl::Vec3f closest_point_1, closest_point_2;
+    urdfParser_->getClosestPoints(joint_collision_names_[idx],
+                                  joint_collision_names_[idy],
+                                  closest_point_1,
+                                  closest_point_2);
+
+    // IMPORTANT NOTE HERE:
+    // The second point is getting ignored due to the duplication of the signal matrix
+    // Place here the update of the dirty flag by a measurement if any of the given input signals has changed or not.
+
+    point = Conversions::convertToDG(closest_point_1);
+    return point;
+
+}
+
+void DynamicGraphFCL::updateURDFParser(const dynamicgraph::Matrix& op_point_sig, int id)const{
+
+    /* This case differencial has to be done based on JLR-Dynamic convention
+      all rotations are going to be around X-Axis and not as mentioned in the URDF
+
+      on the same hand, they ignore all FIXED-joint declarations, which means all frames like
+                        end-effector, tool_joints, base_joints etc.
+        are not being under this convention and can be processed as usual.
+        */
+
+    tfBroadcaster_->sendTransform(
+                joint_collision_names_[id],
+                Conversions::transformToTF(op_point_sig));
+    tfBroadcaster_->sendTransform(
+                "compensation"+joint_collision_names_[id],
+                Conversions::transformToTF(Conversions::sot_rotation_fix(op_point_sig)));
+
+    dynamicgraph::Matrix op_point;
+    if (urdfParser_->isEndeffector(joint_collision_names_[id])){
+        std::cerr << "no sot_compensation for joint: " << joint_collision_names_[id] << std::endl;
+        op_point = op_point_sig;
+    }
+    else{
+        std::cerr << "!! sot_compensation for joint: " << joint_collision_names_[id] << std::endl;
+        op_point = Conversions::sot_rotation_fix(op_point_sig);
+    }
+
+    // update collision objects. Rotation and Position is directly transformed into FCL
+    // all transformations got capsuled into Conversion-namespace to keep up the separation between URDF/FCL and DG
+    urdfParser_->updateLinkPosition(
+                joint_collision_names_[id],
+                *(Conversions::convertToFCLTransform(op_point)));
+
+}
+
 } // namespace FCL
 } // namespace dynamicgraph
 

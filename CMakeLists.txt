@@ -7,7 +7,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 project(dynamic_graph_fcl)
 
-find_package(catkin REQUIRED COMPONENTS)
+find_package(catkin REQUIRED COMPONENTS geometric_shapes urdf tf)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(FCL REQUIRED fcl)
 
@@ -20,8 +20,10 @@ catkin_package(
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_library(dynamic_graph_fcl
-	src/DynamicGraphFCL.cpp
-	include/dynamic_graph_fcl/DynamicGraphFCL.h
+	src/DynamicGraphFCL.cpp src/URDFParser.cpp
+        src/TFBroadcaster.cpp include/dynamic_graph_fcl/TFBroadcaster.h
+	include/dynamic_graph_fcl/DynamicGraphFCL.h include/dynamic_graph_fcl/URDFParser.h
+        include/dynamic_graph_fcl/Conversions.h include/dynamic_graph_fcl/SignalHelper.h
 )
 
 ## Declare a cpp executable
