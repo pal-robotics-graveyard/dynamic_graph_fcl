@@ -13,12 +13,13 @@ TFBroadcaster::TFBroadcaster():
 TFBroadcaster::~TFBroadcaster(){}
 
 
-void TFBroadcaster::sendTransform(const std::string link_name, const std::string parent_link, const tf::Transform transform){
+void TFBroadcaster::sendTransform(const std::string link_name,
+                                  const tf::Transform transform){
 
     // default for parent link should be "base_link"
     br_.sendTransform(
-                tf::StampedTransform(transform, ros::Time::now(), parent_link,
-                                     "sot_origin"+link_name));
+                tf::StampedTransform(transform, ros::Time::now(), "base_link",
+                                     "entFCL_"+link_name));
 }
 
 

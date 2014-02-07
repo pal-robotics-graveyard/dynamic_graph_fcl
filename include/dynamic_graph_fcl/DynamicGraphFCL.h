@@ -29,6 +29,7 @@
 
 #include <dynamic_graph_fcl/URDFParser.h>
 #include <dynamic_graph_fcl/TFBroadcaster.h>
+#include <dynamic_graph_fcl/SOTCompensator.h>
 
 namespace dynamicgraph {
 namespace FCL {
@@ -69,7 +70,7 @@ private:
 
     boost::shared_ptr< TFBroadcaster> tfBroadcaster_;
     boost::shared_ptr< URDFParser> urdfParser_;
-
+    boost::shared_ptr< SOTCompensator> sotCompensator_;
 
     std::vector<boost::shared_ptr< SignalPtr <dynamicgraph::Matrix, int> > >op_point_in_vec_;
 

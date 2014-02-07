@@ -61,7 +61,22 @@ inline dynamicgraph::Vector convertToDG(fcl::Vec3f fcl_vec){
     dg_vec(2) = fcl_vec[2];
 
     return dg_vec;
+}
 
+inline dynamicgraph::Matrix convertToDG(fcl::Transform3f fcl_matrix){
+    dynamicgraph::Matrix dg_mat(4,4);
+    dg_mat.setIdentity();
+
+    fcl::Matrix3f r = fcl_matrix.getRotation();
+    fcl::Vec3f t = fcl_matrix.getTranslation();
+
+    for (int i = 0; i < 3; ++i) {
+        dg_mat.elementAt(i,3) = t[i];
+        for (int j = 0; j < 3; ++j) {
+            dg_mat.elementAt(i,j) = r(i,j);
+        }
+    }
+    return dg_mat;
 }
 
 inline boost::shared_ptr<fcl::Transform3f> convertToFCLTransform(const dynamicgraph::Matrix& matrix){
@@ -135,25 +150,25 @@ inline dynamicgraph::Matrix sot_rotation_fix(const dynamicgraph::Matrix in){
     dynamicgraph::Matrix sot_compensation(4,4);
 
 
-//    sot_compensation(0,0) = 0;
-//    sot_compensation(0,1) = 0;
-//    sot_compensation(0,2) = -1;
-//    sot_compensation(0,3) = 0;
+////    sot_compensation(0,0) = 0;
+////    sot_compensation(0,1) = 0;
+////    sot_compensation(0,2) = -1;
+////    sot_compensation(0,3) = 0;
 
-//    sot_compensation(1,0) = 0;
-//    sot_compensation(1,1) = 1;
-//    sot_compensation(1,2) = 0;
-//    sot_compensation(1,3) = 0;
+////    sot_compensation(1,0) = 0;
+////    sot_compensation(1,1) = 1;
+////    sot_compensation(1,2) = 0;
+////    sot_compensation(1,3) = 0;
 
-//    sot_compensation(2,0) = 1;
-//    sot_compensation(2,1) = 0;
-//    sot_compensation(2,2) = 0;
-//    sot_compensation(2,3) = 0;
+////    sot_compensation(2,0) = 1;
+////    sot_compensation(2,1) = 0;
+////    sot_compensation(2,2) = 0;
+////    sot_compensation(2,3) = 0;
 
-//    sot_compensation(3,0) = 0;
-//    sot_compensation(3,1) = 0;
-//    sot_compensation(3,2) = 0;
-//    sot_compensation(3,3) = 1;
+////    sot_compensation(3,0) = 0;
+////    sot_compensation(3,1) = 0;
+////    sot_compensation(3,2) = 0;
+////    sot_compensation(3,3) = 1;
 
     sot_compensation(0,0) = 0;
     sot_compensation(0,1) = 1;
@@ -178,17 +193,18 @@ inline dynamicgraph::Matrix sot_rotation_fix(const dynamicgraph::Matrix in){
     return in.multiply(sot_compensation.inverse());
 
 }
-inline fcl::Transform3f sot_rotation_fix(fcl::Transform3f in){
-    fcl::Transform3f sot_compensation;
-    fcl::Matrix3f sot_rot(0, 1, 0,
-                          0, 0, 1,
-                          1, 0, 0);
-    fcl::Vec3f sot_trans(0, 0, 0);
-    sot_compensation.setRotation(sot_rot);
-    sot_compensation.setTranslation(sot_trans);
 
-    return in*sot_compensation;
-}
+//inline fcl::Transform3f sot_rotation_fix(fcl::Transform3f in){
+//    fcl::Transform3f sot_compensation;
+//    fcl::Matrix3f sot_rot(0, 1, 0,
+//                          0, 0, 1,
+//                          1, 0, 0);
+//    fcl::Vec3f sot_trans(0, 0, 0);
+//    sot_compensation.setRotation(sot_rot);
+//    sot_compensation.setTranslation(sot_trans);
+
+//    return in*sot_compensation;
+//}
 
 inline tf::Transform transformToTF(const dynamicgraph::Matrix& matrix){
     tf::Transform transform;

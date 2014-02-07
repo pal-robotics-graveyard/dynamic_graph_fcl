@@ -42,7 +42,8 @@ typedef SignalPtr<dynamicgraph::Matrix, int > SignalPtrMatrix;
 DynamicGraphFCL::DynamicGraphFCL(const std::string &inName):
     Entity(inName),
     inName_(inName),
-    tfBroadcaster_(new TFBroadcaster())
+    tfBroadcaster_(new TFBroadcaster()),
+    sotCompensator_(new SOTCompensator())
 {
     std::string docstring;
     docstring =
@@ -60,9 +61,12 @@ DynamicGraphFCL::~DynamicGraphFCL() {}
 
 /// using a split for a continous string,
 //because ATM I didn't find any other method for passing a vector of strings into an entity
-void DynamicGraphFCL::set_collision_joints(const std::string &joint_collision_names){
+void DynamicGraphFCL::set_collision_joints(const std::string &joint_collision_names)
+{
     Conversions::split(joint_collision_names_, joint_collision_names, ':');
     joint_collision_size_ = joint_collision_names_.size();
+    sotCompensator_->initVectorSize(joint_collision_size_);
+
     std::cerr << "amount of collison links found: " << joint_collision_size_ << std::endl;
 
     initCollisionObjects();
@@ -70,19 +74,21 @@ void DynamicGraphFCL::set_collision_joints(const std::string &joint_collision_na
     initDebugSignals();
 }
 
-void DynamicGraphFCL::initCollisionObjects(){
+void DynamicGraphFCL::initCollisionObjects()
+{
+    // give the sotcompensator pointer to urdf for applying to the urdf origin
     urdfParser_.reset(new URDFParser("robot_description", joint_collision_names_));
     urdfParser_->getCollisionObjects();
 }
 
 /// Signal Declaration
-void DynamicGraphFCL::initSignals(){
-
-    // check out boost function for names !!! copy link name pair into function!
+void DynamicGraphFCL::initSignals()
+{
 
     /// Allocate one input signal for each collision object !!
     op_point_in_vec_.resize(joint_collision_size_);
     std::cerr << "op_vec initiliazed" << std::endl;
+
     // Allocate n^2 output signal for each collision pair
     collision_matrix_.resize((joint_collision_size_*joint_collision_size_));
     std::cerr << "matrix initiliazed" << std::endl;
@@ -93,6 +99,11 @@ void DynamicGraphFCL::initSignals(){
         op_point_in_vec_[joint_idx] =
                 SignalHelper::createInputSignalMatrix(joint_collision_names_[joint_idx]);
         signalRegistration(*op_point_in_vec_[joint_idx]);
+
+        // load the respective sot_compensation from the ros_param server
+        // HERe!
+        sotCompensator_->setSOTCompensation(joint_collision_names_[joint_idx], joint_idx);
+
         std::cerr << "input signal registrated " << joint_collision_names_[joint_idx] << std::endl;
     }
 
@@ -118,7 +129,8 @@ void DynamicGraphFCL::initSignals(){
     }
 }
 
-void DynamicGraphFCL::fillCollisionMatrix(int idx, int idy){
+void DynamicGraphFCL::fillCollisionMatrix(int idx, int idy)
+{
 
     std::string joint_name_1 = joint_collision_names_[idx];
     std::string joint_name_2 = joint_collision_names_[idy];
@@ -127,9 +139,8 @@ void DynamicGraphFCL::fillCollisionMatrix(int idx, int idy){
 
     boost::shared_ptr<SignalTimeVector> collisionSignal =
             SignalHelper::createOutputSignalTimeVector(joint_name_1+joint_name_2);
-    collisionSignal->addDependency(*op_point_in_vec_[idx]);
 
-    // might not be initialized yet
+    collisionSignal->addDependency(*op_point_in_vec_[idx]);
     collisionSignal->addDependency(*op_point_in_vec_[idy]);
     collisionSignal->setFunction(boost::bind(&DynamicGraphFCL::closest_point_update_function,
                                              this, _1, _2, joint_name_1, idx, joint_name_2, idy));
@@ -139,7 +150,8 @@ void DynamicGraphFCL::fillCollisionMatrix(int idx, int idy){
 
 }
 
-void DynamicGraphFCL::initDebugSignals(){
+void DynamicGraphFCL::initDebugSignals()
+{
     std::string debug_point_1 = "DynamicGraphFCL("+inName_+")::output(int)::debugPoint1";
     debug_point_1_out = boost::shared_ptr<SignalTimeVector>(new SignalTimeVector(NULL, debug_point_1));
     signalRegistration(*debug_point_1_out);
@@ -150,6 +162,7 @@ void DynamicGraphFCL::initDebugSignals(){
 
 }
 
+/// Update function for the ouput signals
 dynamicgraph::Vector& DynamicGraphFCL::closest_point_update_function(
                     Vector &point, int i,
                     std::string &joint_name_1, int &idx,
@@ -174,6 +187,8 @@ dynamicgraph::Vector& DynamicGraphFCL::closest_point_update_function(
                                   closest_point_1,
                                   closest_point_2);
 
+    std::cerr << "closest_point_1" << closest_point_1 << std::endl;
+
     // IMPORTANT NOTE HERE:
     // The second point is getting ignored due to the duplication of the signal matrix
     // Place here the update of the dirty flag by a measurement if any of the given input signals has changed or not.
@@ -183,7 +198,8 @@ dynamicgraph::Vector& DynamicGraphFCL::closest_point_update_function(
 
 }
 
-void DynamicGraphFCL::updateURDFParser(const dynamicgraph::Matrix& op_point_sig, int id)const{
+void DynamicGraphFCL::updateURDFParser(const dynamicgraph::Matrix& op_point_sig, int id)const
+{
 
     /* This case differencial has to be done based on JLR-Dynamic convention
       all rotations are going to be around X-Axis and not as mentioned in the URDF
@@ -194,21 +210,36 @@ void DynamicGraphFCL::updateURDFParser(const dynamicgraph::Matrix& op_point_sig,
         */
 
     tfBroadcaster_->sendTransform(
-                joint_collision_names_[id],
+                "sot_"+joint_collision_names_[id],
                 Conversions::transformToTF(op_point_sig));
-    tfBroadcaster_->sendTransform(
-                "compensation"+joint_collision_names_[id],
-                Conversions::transformToTF(Conversions::sot_rotation_fix(op_point_sig)));
 
-    dynamicgraph::Matrix op_point;
+    dynamicgraph::Matrix origin = Conversions::convertToDG(urdfParser_->getOrigin(joint_collision_names_[id]));
+    dynamicgraph::Matrix urdf_frame = sotCompensator_->applySOTCompensation(op_point_sig, id);
+    dynamicgraph::Matrix urdf_origin = urdf_frame.multiply(origin);
+
+    tfBroadcaster_->sendTransform(
+                "urdf"+joint_collision_names_[id],
+                Conversions::transformToTF(urdf_frame));
+
+    tfBroadcaster_->sendTransform(
+                "_urdf_origin"+joint_collision_names_[id],
+                Conversions::transformToTF(urdf_origin));
+
+
+    dynamicgraph::Matrix op_point(4,4);
+    op_point.setIdentity();
     if (urdfParser_->isEndeffector(joint_collision_names_[id])){
-        std::cerr << "no sot_compensation for joint: " << joint_collision_names_[id] << std::endl;
+//        std::cerr << "no sot_compensation for joint: " << joint_collision_names_[id] << std::endl;
         op_point = op_point_sig;
     }
     else{
-        std::cerr << "!! sot_compensation for joint: " << joint_collision_names_[id] << std::endl;
-        op_point = Conversions::sot_rotation_fix(op_point_sig);
+//        std::cerr << "!! sot_compensation for joint: " << joint_collision_names_[id] << std::endl;
+//        op_point = Conversions::sot_rotation_fix(op_point_sig);
+//        op_point = op_point_sig.multiply(Conversions::convertToDG(urdfParser_->getOrigin(joint_collision_names_[id])));
+//        op_point = sotCompensator_->applySOTCompensation(op_point_sig, id);
+        op_point = sotCompensator_->applySOTCompensation(origin, id);
     }
+
 
     // update collision objects. Rotation and Position is directly transformed into FCL
     // all transformations got capsuled into Conversion-namespace to keep up the separation between URDF/FCL and DG

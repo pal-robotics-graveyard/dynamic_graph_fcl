@@ -11,7 +11,7 @@ public:
     ~TFBroadcaster();
 
 
-    void sendTransform(const std::string link_name, const std::string parent_link, const tf::Transform transform);
+    void sendTransform(const std::string link_name, const tf::Transform transform);
 
 
 private:

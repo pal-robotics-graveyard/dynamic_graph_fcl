@@ -22,6 +22,7 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 add_library(dynamic_graph_fcl
 	src/DynamicGraphFCL.cpp src/URDFParser.cpp
         src/TFBroadcaster.cpp include/dynamic_graph_fcl/TFBroadcaster.h
+        src/SOTCompensator.cpp include/dynamic_graph_fcl/SOTCompensator.h
 	include/dynamic_graph_fcl/DynamicGraphFCL.h include/dynamic_graph_fcl/URDFParser.h
         include/dynamic_graph_fcl/Conversions.h include/dynamic_graph_fcl/SignalHelper.h
 )
