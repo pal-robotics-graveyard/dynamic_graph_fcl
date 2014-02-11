@@ -187,7 +187,7 @@ dynamicgraph::Vector& DynamicGraphFCL::closest_point_update_function(
                                   closest_point_1,
                                   closest_point_2);
 
-    std::cerr << "closest_point_1" << closest_point_1 << std::endl;
+//    std::cerr << "closest_point_1" << closest_point_1 << std::endl;
 
     // IMPORTANT NOTE HERE:
     // The second point is getting ignored due to the duplication of the signal matrix
@@ -209,43 +209,28 @@ void DynamicGraphFCL::updateURDFParser(const dynamicgraph::Matrix& op_point_sig,
         are not being under this convention and can be processed as usual.
         */
 
-    tfBroadcaster_->sendTransform(
-                "sot_"+joint_collision_names_[id],
-                Conversions::transformToTF(op_point_sig));
+//    tfBroadcaster_->sendTransform(
+//                "sot_"+joint_collision_names_[id],
+//                Conversions::transformToTF(op_point_sig));
 
     dynamicgraph::Matrix origin = Conversions::convertToDG(urdfParser_->getOrigin(joint_collision_names_[id]));
     dynamicgraph::Matrix urdf_frame = sotCompensator_->applySOTCompensation(op_point_sig, id);
     dynamicgraph::Matrix urdf_origin = urdf_frame.multiply(origin);
 
-    tfBroadcaster_->sendTransform(
-                "urdf"+joint_collision_names_[id],
-                Conversions::transformToTF(urdf_frame));
+//    tfBroadcaster_->sendTransform(
+//                "urdf"+joint_collision_names_[id],
+//                Conversions::transformToTF(urdf_frame));
 
-    tfBroadcaster_->sendTransform(
-                "_urdf_origin"+joint_collision_names_[id],
-                Conversions::transformToTF(urdf_origin));
-
-
-    dynamicgraph::Matrix op_point(4,4);
-    op_point.setIdentity();
-    if (urdfParser_->isEndeffector(joint_collision_names_[id])){
-//        std::cerr << "no sot_compensation for joint: " << joint_collision_names_[id] << std::endl;
-        op_point = op_point_sig;
-    }
-    else{
-//        std::cerr << "!! sot_compensation for joint: " << joint_collision_names_[id] << std::endl;
-//        op_point = Conversions::sot_rotation_fix(op_point_sig);
-//        op_point = op_point_sig.multiply(Conversions::convertToDG(urdfParser_->getOrigin(joint_collision_names_[id])));
-//        op_point = sotCompensator_->applySOTCompensation(op_point_sig, id);
-        op_point = sotCompensator_->applySOTCompensation(origin, id);
-    }
+//    tfBroadcaster_->sendTransform(
+//                "urdf_origin"+joint_collision_names_[id],
+//                Conversions::transformToTF(urdf_origin));
 
 
     // update collision objects. Rotation and Position is directly transformed into FCL
     // all transformations got capsuled into Conversion-namespace to keep up the separation between URDF/FCL and DG
     urdfParser_->updateLinkPosition(
                 joint_collision_names_[id],
-                *(Conversions::convertToFCLTransform(op_point)));
+                *(Conversions::convertToFCLTransform(urdf_origin)));
 
 }
 

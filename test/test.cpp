@@ -39,15 +39,6 @@ int main(void){
                 dynamicgraph::FactoryStorage::getInstance()->
                 newEntity("DynamicGraphFCL", "DynamicGraphFCL"));
 
-
-
-//    std::cout << "element 5: " << joint_states_vec.elementAt(5) << std::endl;
-//    dynamicgraph::Signal<dynamicgraph::Vector, int> joint_states;
-//    joint_states->setConstant(joint_states_vec);
-
-//    std::cout << "joint_states init" << std::endl;
-
-
     dynamicgraph::Signal<double, int> *aOut;
     aOut = dynamic_cast<dynamicgraph::Signal<double, int> *>(&(fcl->getSignal("aOUT")));
 

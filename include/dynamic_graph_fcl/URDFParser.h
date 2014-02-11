@@ -50,8 +50,7 @@ private:
     std::vector<std::string> joint_names_;
 
     void parseCollisionObjects();
-    void parseCapsule(const boost::shared_ptr<const urdf::Link>& link, boost::shared_ptr<fcl::CollisionObject>& collision_object) const;
-    void parseMesh(const boost::shared_ptr<const urdf::Link>& link,  boost::shared_ptr<fcl::CollisionObject>& collision_object) const;
+    boost::shared_ptr<fcl::Transform3f> parseCapsule(const boost::shared_ptr<const urdf::Link>& link, boost::shared_ptr<fcl::CollisionObject>& collision_object) const;
     boost::shared_ptr<const urdf::Link> getFastLink(const std::string& name) const;
     boost::shared_ptr<const urdf::Joint> getFastJoint(const std::string& name) const;
 
