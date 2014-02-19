@@ -6,6 +6,7 @@
 #include <dynamic-graph/linear-algebra.h>
 #include <dynamic-graph/all-commands.h>
 #include <dynamic-graph/factory.h>
+#include <sot/core/matrix-homogeneous.hh>
 
 namespace dynamicgraph{
 
@@ -13,10 +14,19 @@ namespace FCL{
 
 namespace SignalHelper{
 
-typedef SignalTimeDependent < dynamicgraph::Matrix, int > SignalTimeMatrix;
+typedef SignalTimeDependent < sot::MatrixHomogeneous, int > SignalTimeMatrix;
 typedef SignalTimeDependent < dynamicgraph::Vector, int > SignalTimeVector;
 typedef SignalPtr<dynamicgraph::Vector, int > SignalPtrVector;
-typedef SignalPtr<dynamicgraph::Matrix, int > SignalPtrMatrix;
+typedef SignalPtr<sot::MatrixHomogeneous, int > SignalPtrMatrix;
+
+
+inline boost::shared_ptr<SignalTimeMatrix> createOutputSignalTimeMatrix(std::string name){
+
+    std::string signal_name = "DynamicGraphFCL(entFCL)::output(matrix)::"+name;
+    boost::shared_ptr<SignalTimeMatrix> signal =  boost::shared_ptr<SignalTimeMatrix>(
+                new SignalTimeMatrix(NULL, signal_name));
+    return signal;
+}
 
 inline boost::shared_ptr<SignalTimeVector> createOutputSignalTimeVector(std::string name){
 

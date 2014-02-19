@@ -26,10 +26,13 @@
 #include <dynamic-graph/signal-time-dependent.h>
 #include <dynamic-graph/signal-ptr.h>
 #include <dynamic-graph/factory.h>
+#include <sot/core/matrix-homogeneous.hh>
+
 
 #include <dynamic_graph_fcl/URDFParser.h>
 #include <dynamic_graph_fcl/TFBroadcaster.h>
 #include <dynamic_graph_fcl/SOTCompensator.h>
+
 
 namespace dynamicgraph {
 namespace FCL {
@@ -44,10 +47,6 @@ public:
     ~DynamicGraphFCL();
 
 
-    boost::shared_ptr< SignalPtr <dynamicgraph::Vector, int> > joint_states_in;
-
-    boost::shared_ptr< SignalTimeDependent<dynamicgraph::Vector, int> > joint_states_out;
-
     void set_collision_joints(const std::string& joint_collision_names);
     void init_collisions(const std::vector<std::string>& joint_collision_names);
 
@@ -56,7 +55,7 @@ public:
 
     // critical update function. For the state of the development this gets triggered for each collision pair twice!
     // optimal solution will be to set a dirty_flag when a recomputation of the FCL distance is actually needed.
-    dynamicgraph::Vector& closest_point_update_function(dynamicgraph::Vector& point, int i, std::string& joint_name_1,int& idx, std::string& joint_name_2, int& idy);
+   sot::MatrixHomogeneous& closest_point_update_function(sot::MatrixHomogeneous& point, int i, std::string& joint_name_1,int& idx, std::string& joint_name_2, int& idy);
 
     boost::shared_ptr< SignalTimeDependent<dynamicgraph::Vector, int> > debug_point_1_out;
     boost::shared_ptr< SignalTimeDependent<dynamicgraph::Vector, int> > debug_point_2_out;
@@ -72,14 +71,21 @@ private:
     boost::shared_ptr< URDFParser> urdfParser_;
     boost::shared_ptr< SOTCompensator> sotCompensator_;
 
-    std::vector<boost::shared_ptr< SignalPtr <dynamicgraph::Matrix, int> > >op_point_in_vec_;
+    std::vector<boost::shared_ptr< SignalPtr <sot::MatrixHomogeneous, int> > >op_point_in_vec_;
+
 
     // length of this vector has to be joint_collision_names^2
     // idx is determined as it would be in matrix form
     //
     // width * i+ j , where i,j are the index of collision_joint_names.
     // leads to a unique idexing of the collison matrix
-    std::vector<boost::shared_ptr< SignalTimeDependent<dynamicgraph::Vector, int> > >collision_matrix_;
+    std::vector<boost::shared_ptr< SignalTimeDependent<sot::MatrixHomogeneous, int> > >collision_matrix_;
+    std::vector<boost::shared_ptr< SignalTimeDependent<dynamicgraph::Vector, int> > >oppoint_transformations_;
+
+    int getMatrixIndex(int idx, int idy){
+        return idx*joint_collision_size_ + idy;
+    }
+
 
     void initCollisionObjects();
     void initSignals();

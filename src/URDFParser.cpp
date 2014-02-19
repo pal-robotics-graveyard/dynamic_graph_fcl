@@ -49,6 +49,9 @@ boost::shared_ptr<fcl::Transform3f> URDFParser::parseCapsule(const boost::shared
                 link->collision->geometry);
 
     urdf::Pose origin_tmp = link->collision->origin;
+
+    std::cerr << "collision origin for "<< link->name << "=" << link->collision->origin.position.z << std::endl;
+
     //check that!
     // This is heavily URDF dependent,
     // as this depends on my capsule decomposition, check the according URDF
@@ -112,7 +115,7 @@ void URDFParser::updateLinkPosition(const std::string& link_name,const fcl::Tran
     boost::shared_ptr<fcl::CollisionObject> collision_object = collision_objects_[link_name];
     boost::shared_ptr<fcl::Transform3f> collision_origin = collision_objects_origins_[link_name];
 
-    collision_object->setTransform( (*collision_origin) * transform );
+    collision_object->setTransform( transform * (*collision_origin));
 }
 
 fcl::Transform3f URDFParser::getOrigin(const std::string& link_name)

@@ -14,7 +14,7 @@ pkg_check_modules(FCL REQUIRED fcl)
 catkin_package(
 	INCLUDE_DIRS include
 	LIBRARIES dynamic_graph_fcl
-	DEPENDS dynamic-graph dynamic-graph-python
+	DEPENDS dynamic-graph dynamic-graph-python sot-core
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS})
@@ -35,7 +35,7 @@ target_link_libraries(dynamic_graph_test
    ${catkin_LIBRARIES} ${FCL_LIBRARIES} dynamic_graph_fcl
 )
 target_link_libraries(dynamic_graph_fcl ${catkin_LIBRARIES} ${FCL_LIBRARIES})
-set(PKG_DEP dynamic-graph dynamic-graph-python)
+set(PKG_DEP dynamic-graph dynamic-graph-python sot-core)
 foreach(DEP ${PKG_DEP})
 	message("invoking dependency check for: ${DEP}")
 	pkg_check_modules(${DEP} REQUIRED ${DEP})

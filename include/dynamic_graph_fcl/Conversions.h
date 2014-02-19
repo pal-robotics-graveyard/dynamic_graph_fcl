@@ -118,9 +118,9 @@ inline boost::shared_ptr<fcl::Transform3f> convertToFCLTransform(const urdf::Pos
 
     fcl::Matrix3f rot;
     rot.setIdentity();
-    double r,p,y;
-    urdf_pose.rotation.getRPY(r,p,y);
-    rot.setEulerYPR(y,p,r);
+//    double r,p,y;
+//    urdf_pose.rotation.getRPY(r,p,y);
+//    rot.setEulerYPR(y,p,r);
 
     fcl_transform->setRotation(rot);
 
@@ -233,6 +233,21 @@ inline tf::Transform transformToTF(const dynamicgraph::Matrix& matrix){
 
 
     // check that!!
+    transform.setRotation(quat);
+    transform.setOrigin(pos);
+
+    return transform;
+}
+
+inline tf::Transform transformToTF(const dynamicgraph::Vector& vector)
+{
+    tf::Transform transform;
+
+    tf::Quaternion quat(0,0,0,1);
+
+    tf::Vector3 pos;
+    pos.setValue(vector.elementAt(0),vector.elementAt(1),vector.elementAt(2));
+
     transform.setRotation(quat);
     transform.setOrigin(pos);
 
