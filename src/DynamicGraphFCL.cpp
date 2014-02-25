@@ -27,7 +27,11 @@
 #include <dynamic_graph_fcl/Conversions.h>
 #include <dynamic_graph_fcl/SignalHelper.h>
 
+#include <sot/core/matrix-rotation.hh>
+
 #include <ros/ros.h>
+
+
 
 namespace dynamicgraph {
 namespace FCL {
@@ -152,7 +156,8 @@ void DynamicGraphFCL::fillCollisionMatrix(int idx, int idy)
     collision_matrix_[collision_matrix_idx] = collisionSignal;
 
     oppoint_transformations_[collision_matrix_idx] =
-            SignalHelper::createOutputSignalTimeVector("oppoint_"+joint_collision_names_[idx]+joint_collision_names_[idy]);
+            SignalHelper::createOutputSignalTimeVector(
+                "oppoint_"+joint_collision_names_[idx]+joint_collision_names_[idy]);
     signalRegistration(*oppoint_transformations_[collision_matrix_idx]);
 
 
@@ -195,24 +200,27 @@ sot::MatrixHomogeneous& DynamicGraphFCL::closest_point_update_function(
                                   closest_point_1,
                                   closest_point_2);
 
-//        std::cerr << "closest_point_1" << closest_point_1 << std::endl;
+    //        std::cerr << "closest_point_1" << closest_point_1 << std::endl;
 
     // IMPORTANT NOTE HERE:
     // The second point is getting ignored due to the duplication of the signal matrix
     // Place here the update of the dirty flag by a measurement if any of the given input signals has changed or not.
 
-    point.setIdentity();
-    point.elementAt(0,3) = closest_point_1[0];
-    point.elementAt(1,3) = closest_point_1[1];
-    point.elementAt(2,3) = closest_point_1[2];
-
-    //    THIS IS WRONG, SIGNAL HAS TO BE NOT A SINGLE ONE, BUT EQUIVALENT TO THE COLLISIONMATRIX:
     const sot::MatrixHomogeneous& op_point_in = (*op_point_in_vec_[idx])(i);
-    dynamicgraph::Vector relativ_point = op_point_in.inverse().multiply(Conversions::convertToDG(closest_point_1));
+    dynamicgraph::Vector cp1 = Conversions::convertToDG(closest_point_1);
+    dynamicgraph::Vector relativ_point = op_point_in.inverse().multiply(cp1);
 
     int matrixIndex = getMatrixIndex(idx, idy);
     oppoint_transformations_[matrixIndex]->setConstant(relativ_point);
     //    oppoint_transformations_[idx]->setConstant(relativ_point);
+
+//    tfBroadcaster_->sendTransform(joint_collision_names_[idx]+joint_collision_names_[idy],
+//                                  Conversions::transformToTF(op_point_in)
+//                                  );
+//    tfBroadcaster_->sendTransform("relativ_"+joint_collision_names_[idx]+joint_collision_names_[idy],
+//                                  Conversions::transformToTF(relativ_point),
+//                                  "entFCL_"+joint_collision_names_[idx]+joint_collision_names_[idy]
+//                                  );
 
     // VISUALIZATION IN RVIZ
     //    dynamicgraph::Matrix op_point_in_sot = op_point_in;
@@ -224,11 +232,20 @@ sot::MatrixHomogeneous& DynamicGraphFCL::closest_point_update_function(
     //    std::cerr << "closest point of : " << joint_collision_names_[idx] << point << std::endl;
     //    std::cerr << "relative point: "<< joint_collision_names_[idx] << relativ_point << std::endl;
 
-//        tfBroadcaster_->sendTransform("sot_"+joint_collision_names_[idx]+joint_collision_names_[idy],
-//                                          Conversions::transformToTF(op_point_in)
-//                                      );
+    //        tfBroadcaster_->sendTransform("sot_"+joint_collision_names_[idx]+joint_collision_names_[idy],
+    //                                          Conversions::transformToTF(op_point_in)
+    //                                      );
 
     //    return relativ_point;
+    // this identity might be wrong, replace this with p1_rotation
+
+    sot::MatrixRotation rot1;
+    op_point_in.extract(rot1);
+    point.buildFrom(rot1,relativ_point);
+
+    point.elementAt(0,3) = closest_point_1[0];
+    point.elementAt(1,3) = closest_point_1[1];
+    point.elementAt(2,3) = closest_point_1[2];
     return point;
 
 }
@@ -247,9 +264,9 @@ void DynamicGraphFCL::updateURDFParser(const dynamicgraph::Matrix& op_point_sig,
 
     dynamicgraph::Matrix origin = Conversions::convertToDG(urdfParser_->getOrigin(joint_collision_names_[id]));
     dynamicgraph::Matrix urdf_frame = sotCompensator_->applySOTCompensation(op_point_sig, id);
-//    tfBroadcaster_->sendTransform(
-//                "sot_compensation"+joint_collision_names_[id],
-//                Conversions::transformToTF(urdf_frame));
+    //    tfBroadcaster_->sendTransform(
+    //                "sot_compensation"+joint_collision_names_[id],
+    //                Conversions::transformToTF(urdf_frame));
     dynamicgraph::Matrix urdf_origin = urdf_frame.multiply(origin);
 
     //    tfBroadcaster_->sendTransform(

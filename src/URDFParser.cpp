@@ -19,7 +19,8 @@ URDFParser::URDFParser(const std::string &robot_description_param, const std::ve
 
 URDFParser::~URDFParser(){}
 
-void URDFParser::parseCollisionObjects(){
+void URDFParser::parseCollisionObjects()
+{
 
     for (int var = 0; var < joint_names_.size(); ++var) {
 
@@ -33,7 +34,8 @@ void URDFParser::parseCollisionObjects(){
             std::cout << "capsule succesfully parsed" << std::endl;
         }
         else{
-            std::cerr << "module not parsed, because no cyclinder/capsule: " << joint_names_[var] << std::endl;
+            std::cerr << "module not parsed, because no cyclinder/capsule: "
+                      << joint_names_[var] << std::endl;
             return;
         }
         collision_objects_[joint_names_[var]] = collision_object;
@@ -41,8 +43,10 @@ void URDFParser::parseCollisionObjects(){
 }
 
 
-boost::shared_ptr<fcl::Transform3f> URDFParser::parseCapsule(const boost::shared_ptr<const urdf::Link>& link,
-                                                             boost::shared_ptr<fcl::CollisionObject>& collision_object) const {
+boost::shared_ptr<fcl::Transform3f> URDFParser::parseCapsule(
+        const boost::shared_ptr<const urdf::Link>& link,
+        boost::shared_ptr<fcl::CollisionObject>& collision_object) const
+{
 
     boost::shared_ptr<urdf::Cylinder> collisionGeometry =
             boost::dynamic_pointer_cast<urdf::Cylinder>(
@@ -50,7 +54,8 @@ boost::shared_ptr<fcl::Transform3f> URDFParser::parseCapsule(const boost::shared
 
     urdf::Pose origin_tmp = link->collision->origin;
 
-    std::cerr << "collision origin for "<< link->name << "=" << link->collision->origin.position.z << std::endl;
+    std::cerr << "collision origin for "<< link->name
+              << "=" << link->collision->origin.position.z << std::endl;
 
     //check that!
     // This is heavily URDF dependent,
@@ -62,13 +67,20 @@ boost::shared_ptr<fcl::Transform3f> URDFParser::parseCapsule(const boost::shared
     origin_tmp.position.z -= sign* (collisionGeometry->length/2);
 
     boost::shared_ptr<fcl::Capsule> capsule =
-            boost::shared_ptr<fcl::Capsule>(new fcl::Capsule(collisionGeometry->radius, sign*collisionGeometry->length));
-    std::cerr << "capsule data; r: " << collisionGeometry->radius << "l: " << collisionGeometry->length << std::endl;
+            boost::shared_ptr<fcl::Capsule>(
+                new fcl::Capsule(collisionGeometry->radius, sign*collisionGeometry->length));
+
+
+    std::cerr << "capsule data; r: " << collisionGeometry->radius
+              << "l: " << collisionGeometry->length << std::endl;
+
+
     collision_object.reset(new fcl::CollisionObject(capsule));
     return Conversions::convertToFCLTransform(origin_tmp);
 }
 
-std::map<std::string, boost::shared_ptr<fcl::CollisionObject> > URDFParser::getCollisionObjects(){
+std::map<std::string, boost::shared_ptr<fcl::CollisionObject> > URDFParser::getCollisionObjects()
+{
     return collision_objects_;
 }
 
@@ -92,7 +104,8 @@ boost::shared_ptr<const urdf::Joint> URDFParser::getFastJoint(const std::string&
         return it->second;
 }
 
-bool URDFParser::isEndeffector(const std::string& joint_name) const {
+bool URDFParser::isEndeffector(const std::string& joint_name) const
+{
     boost::shared_ptr<const urdf::Joint> joint = getFastJoint(joint_name);
     if (joint->type == urdf::Joint::FIXED){
         return true;
@@ -100,7 +113,9 @@ bool URDFParser::isEndeffector(const std::string& joint_name) const {
     return false;
 }
 
-void URDFParser::updateLinkPosition(const std::string &link_name, const fcl::Matrix3f& rot, const fcl::Vec3f& pos)
+void URDFParser::updateLinkPosition(const std::string &link_name,
+                                    const fcl::Matrix3f& rot,
+                                    const fcl::Vec3f& pos)
 {
     fcl::Transform3f transform;
     transform.setTranslation(pos);
@@ -110,10 +125,13 @@ void URDFParser::updateLinkPosition(const std::string &link_name, const fcl::Mat
 }
 
 
-void URDFParser::updateLinkPosition(const std::string& link_name,const fcl::Transform3f& transform)
+void URDFParser::updateLinkPosition(const std::string& link_name,
+                                    const fcl::Transform3f& transform)
 {
-    boost::shared_ptr<fcl::CollisionObject> collision_object = collision_objects_[link_name];
-    boost::shared_ptr<fcl::Transform3f> collision_origin = collision_objects_origins_[link_name];
+    boost::shared_ptr<fcl::CollisionObject> collision_object
+            = collision_objects_[link_name];
+    boost::shared_ptr<fcl::Transform3f> collision_origin
+            = collision_objects_origins_[link_name];
 
     collision_object->setTransform( transform * (*collision_origin));
 }
@@ -125,10 +143,13 @@ fcl::Transform3f URDFParser::getOrigin(const std::string& link_name)
 
 void URDFParser::getClosestPoints(const std::string &link_name_1,
                                   const std::string &link_name_2,
-                                  fcl::Vec3f& p1, fcl::Vec3f& p2){
+                                  fcl::Vec3f& p1, fcl::Vec3f& p2)
+{
 
-    boost::shared_ptr<fcl::CollisionObject> collision_objects_1 = collision_objects_[link_name_1];
-    boost::shared_ptr<fcl::CollisionObject> collision_objects_2 = collision_objects_[link_name_2];
+    boost::shared_ptr<fcl::CollisionObject> collision_objects_1
+            = collision_objects_[link_name_1];
+    boost::shared_ptr<fcl::CollisionObject> collision_objects_2
+            = collision_objects_[link_name_2];
 
     fcl::DistanceRequest request;
     request.gjk_solver_type = fcl::GST_INDEP;
@@ -138,7 +159,9 @@ void URDFParser::getClosestPoints(const std::string &link_name_1,
     fcl::DistanceResult result;
 
     // perform distance test
-    fcl::distance(collision_objects_1.get(), collision_objects_2.get(), request, result);
+    fcl::distance(collision_objects_1.get(),
+                  collision_objects_2.get(),
+                  request, result);
     p1 = result.nearest_points[0];
     p2 = result.nearest_points[1];
 
