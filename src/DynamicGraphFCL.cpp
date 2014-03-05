@@ -1,20 +1,38 @@
 /*
- * Copyright 2011,
- * Florent Lamiraux
+ * Software License Agreement (Modified BSD License)
  *
- * CNRS
+ *  Copyright (c) 2012-2014, PAL Robotics, S.L.
+ *  All rights reserved.
  *
- * This file is part of sot-test.
- * sot-test is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation, either version 3 of
- * the License, or (at your option) any later version.
- * sot-test is distributed in the hope that it will be
- * useful, but WITHOUT ANY WARRANTY; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.  You should
- * have received a copy of the GNU Lesser General Public License along
- * with sot-test.  If not, see <http://www.gnu.org/licenses/>.
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of PAL Robotics, S.L. nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @author Karsten Knese
+ * @date 5.3.2014
  */
 
 #include <math.h>
@@ -111,8 +129,10 @@ void DynamicGraphFCL::initSignals()
         // HERe!
         sotCompensator_->setSOTCompensation(joint_collision_names_[joint_idx], joint_idx);
 
-        std::cerr << "input signal registrated " << joint_collision_names_[joint_idx] << std::endl;
-        std::cerr << "input signal registrated " << "oppoint_"+joint_collision_names_[joint_idx] << std::endl;
+        std::cerr << "input signal registrated "
+                  << joint_collision_names_[joint_idx] << std::endl;
+        std::cerr << "input signal registrated "
+                  << "oppoint_"+joint_collision_names_[joint_idx] << std::endl;
     }
 
     // !! NOTE
@@ -159,18 +179,22 @@ void DynamicGraphFCL::fillCollisionMatrix(int idx, int idy)
             SignalHelper::createOutputSignalTimeVector(
                 "oppoint_"+joint_collision_names_[idx]+joint_collision_names_[idy]);
     signalRegistration(*oppoint_transformations_[collision_matrix_idx]);
-
-
 }
 
 void DynamicGraphFCL::initDebugSignals()
 {
-    std::string debug_point_1 = "DynamicGraphFCL("+inName_+")::output(int)::debugPoint1";
-    debug_point_1_out = boost::shared_ptr<SignalTimeVector>(new SignalTimeVector(NULL, debug_point_1));
+    std::string debug_point_1
+            = "DynamicGraphFCL("+inName_+")::output(int)::debugPoint1";
+    debug_point_1_out
+            = boost::shared_ptr<SignalTimeVector>(
+                new SignalTimeVector(NULL, debug_point_1));
     signalRegistration(*debug_point_1_out);
 
-    std::string debug_point_2 = "DynamicGraphFCL("+inName_+")::output(int)::debugPoint2";
-    debug_point_2_out = boost::shared_ptr<SignalTimeVector>(new SignalTimeVector(NULL, debug_point_2));
+    std::string debug_point_2
+            = "DynamicGraphFCL("+inName_+")::output(int)::debugPoint2";
+    debug_point_2_out
+            = boost::shared_ptr<SignalTimeVector>(
+                new SignalTimeVector(NULL, debug_point_2));
     signalRegistration(*debug_point_2_out);
 
 }
@@ -179,9 +203,8 @@ void DynamicGraphFCL::initDebugSignals()
 sot::MatrixHomogeneous& DynamicGraphFCL::closest_point_update_function(
         sot::MatrixHomogeneous& point, int i,
         std::string &joint_name_1, int &idx,
-        std::string &joint_name_2, int &idy){
-
-
+        std::string &joint_name_2, int &idy)
+{
     if (joint_collision_names_[idx] != joint_name_1){
         std::cerr << "SOMETHING'S BRUTALLY WRONG HERE" << std::endl;
     }
@@ -200,11 +223,11 @@ sot::MatrixHomogeneous& DynamicGraphFCL::closest_point_update_function(
                                   closest_point_1,
                                   closest_point_2);
 
-    //        std::cerr << "closest_point_1" << closest_point_1 << std::endl;
-
     // IMPORTANT NOTE HERE:
-    // The second point is getting ignored due to the duplication of the signal matrix
-    // Place here the update of the dirty flag by a measurement if any of the given input signals has changed or not.
+    // The second point is getting ignored
+    // due to the duplication of the signal matrix
+    // Place here the update of the dirty flag
+    // by a measurement if any of the given input signals has changed or not.
 
     const sot::MatrixHomogeneous& op_point_in = (*op_point_in_vec_[idx])(i);
     dynamicgraph::Vector cp1 = Conversions::convertToDG(closest_point_1);
@@ -212,32 +235,7 @@ sot::MatrixHomogeneous& DynamicGraphFCL::closest_point_update_function(
 
     int matrixIndex = getMatrixIndex(idx, idy);
     oppoint_transformations_[matrixIndex]->setConstant(relativ_point);
-    //    oppoint_transformations_[idx]->setConstant(relativ_point);
 
-//    tfBroadcaster_->sendTransform(joint_collision_names_[idx]+joint_collision_names_[idy],
-//                                  Conversions::transformToTF(op_point_in)
-//                                  );
-//    tfBroadcaster_->sendTransform("relativ_"+joint_collision_names_[idx]+joint_collision_names_[idy],
-//                                  Conversions::transformToTF(relativ_point),
-//                                  "entFCL_"+joint_collision_names_[idx]+joint_collision_names_[idy]
-//                                  );
-
-    // VISUALIZATION IN RVIZ
-    //    dynamicgraph::Matrix op_point_in_sot = op_point_in;
-    //    op_point_in_sot = sotCompensator_->applySOTCompensation(op_point_in_sot,idx);
-
-    //    sot::MatrixHomogeneous op_point_homo(op_point_in_sot);
-    //    dynamicgraph::Vector relativ_point =  op_point_homo.inverse().multiply(point);
-
-    //    std::cerr << "closest point of : " << joint_collision_names_[idx] << point << std::endl;
-    //    std::cerr << "relative point: "<< joint_collision_names_[idx] << relativ_point << std::endl;
-
-    //        tfBroadcaster_->sendTransform("sot_"+joint_collision_names_[idx]+joint_collision_names_[idy],
-    //                                          Conversions::transformToTF(op_point_in)
-    //                                      );
-
-    //    return relativ_point;
-    // this identity might be wrong, replace this with p1_rotation
 
     sot::MatrixRotation rot1;
     op_point_in.extract(rot1);
@@ -261,22 +259,9 @@ void DynamicGraphFCL::updateURDFParser(const dynamicgraph::Matrix& op_point_sig,
         are not being under this convention and can be processed as usual.
         */
 
-
     dynamicgraph::Matrix origin = Conversions::convertToDG(urdfParser_->getOrigin(joint_collision_names_[id]));
     dynamicgraph::Matrix urdf_frame = sotCompensator_->applySOTCompensation(op_point_sig, id);
-    //    tfBroadcaster_->sendTransform(
-    //                "sot_compensation"+joint_collision_names_[id],
-    //                Conversions::transformToTF(urdf_frame));
     dynamicgraph::Matrix urdf_origin = urdf_frame.multiply(origin);
-
-    //    tfBroadcaster_->sendTransform(
-    //                "urdf"+joint_collision_names_[id],
-    //                Conversions::transformToTF(urdf_frame));
-
-    //    tfBroadcaster_->sendTransform(
-    //                "urdf_origin"+joint_collision_names_[id],
-    //                Conversions::transformToTF(urdf_origin));
-
 
     // update collision objects. Rotation and Position is directly transformed into FCL
     // all transformations got capsuled into Conversion-namespace to keep up the separation between URDF/FCL and DG

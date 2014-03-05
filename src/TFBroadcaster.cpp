@@ -36,8 +36,6 @@ void TFBroadcaster::sendTransform(const std::string link_name,
     // stupid hack because DG deals with joints rather then link
     // for debugging purposes just replace "joint" with "link"
 
-//    replace(parent, "joint", "link");
-
     // default for parent link should be "base_link"
     br_.sendTransform(
                 tf::StampedTransform(transform, ros::Time::now(), parent,

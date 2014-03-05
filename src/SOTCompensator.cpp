@@ -9,11 +9,9 @@ namespace FCL{
 SOTCompensator::SOTCompensator():
     nh_()
 {
-
     if(nh_.ok()){
         std::cerr << "ros initialized" << std::endl;
     }
-
 }
 
 SOTCompensator::~SOTCompensator(){}
@@ -57,31 +55,24 @@ void SOTCompensator::setSOTCompensation(const std::string& joint_name, const int
     for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j) {
             compensation->elementAt(i,j) = rot[i][j];
-            std::cerr << "sot compensation at: " << i << " " <<j << " = " << compensation->elementAt(i,j) << std::endl;
+            std::cerr << "sot compensation at: " << i
+                      << " " <<j << " = " << compensation->elementAt(i,j) << std::endl;
         }
     }
 
-    // make homogenous
-//    compensation->elementAt(0,3) = 0;
-//    compensation->elementAt(1,3) = 0;
-//    compensation->elementAt(2,3) = 0;
-//    compensation->elementAt(3,0) = 0;
-//    compensation->elementAt(3,1) = 0;
-//    compensation->elementAt(3,2) = 0;
     compensation->elementAt(3,3) = 1;
-
-
-
     compensation_matrix_vec[idx] = compensation;
 }
 
 
-boost::shared_ptr<dynamicgraph::Matrix> SOTCompensator::getSOTCompensation(const int& idx) const
+boost::shared_ptr<dynamicgraph::Matrix> SOTCompensator::getSOTCompensation(
+        const int& idx) const
 {
     return compensation_matrix_vec[idx];
 }
 
-dynamicgraph::Matrix SOTCompensator::applySOTCompensation(const dynamicgraph::Matrix& signal_in, int idx) const
+dynamicgraph::Matrix SOTCompensator::applySOTCompensation(
+        const dynamicgraph::Matrix& signal_in, int idx) const
 {
 
     boost::shared_ptr<dynamicgraph::Matrix> compensation = getSOTCompensation(idx);
