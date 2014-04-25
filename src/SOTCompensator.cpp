@@ -30,6 +30,7 @@ void SOTCompensator::setSOTCompensation(const std::string& joint_name, const int
     nh_.param<double>("/sot_controller/"+joint_name+"/quat/z", z, 0);
 
 
+
     std::cerr << "param server was: " << w << ";;"<< x << ";;"<< y << ";;"<< z << ";;"<<std::endl;
 
 
@@ -45,10 +46,9 @@ void SOTCompensator::setSOTCompensation(const std::string& joint_name, const int
     // check if tf rotation is the same as the compensation
     // MAYBE THE COPY IS WRONGLY ADDRESSED !!
 
+    boost::shared_ptr<sot::MatrixHomogeneous> compensation
+            = boost::shared_ptr<sot::MatrixHomogeneous>(new sot::MatrixHomogeneous());
 
-
-    boost::shared_ptr<dynamicgraph::Matrix> compensation
-            = boost::shared_ptr<dynamicgraph::Matrix>(new dynamicgraph::Matrix(4,4));
 
     std::cerr << "compensation for joint: " << joint_name << std::endl;
     compensation->setZero();
@@ -65,20 +65,27 @@ void SOTCompensator::setSOTCompensation(const std::string& joint_name, const int
 }
 
 
-boost::shared_ptr<dynamicgraph::Matrix> SOTCompensator::getSOTCompensation(
+boost::shared_ptr<sot::MatrixHomogeneous> SOTCompensator::getSOTCompensation(
         const int& idx) const
 {
     return compensation_matrix_vec[idx];
 }
 
-dynamicgraph::Matrix SOTCompensator::applySOTCompensation(
-        const dynamicgraph::Matrix& signal_in, int idx) const
+sot::MatrixHomogeneous SOTCompensator::fromSOTtoURDF(
+        const sot::MatrixHomogeneous& signal_in, int idx) const
 {
 
-    boost::shared_ptr<dynamicgraph::Matrix> compensation = getSOTCompensation(idx);
+    boost::shared_ptr<sot::MatrixHomogeneous> compensation = getSOTCompensation(idx);
     return signal_in.multiply(compensation->inverse());
 }
 
+sot::MatrixHomogeneous SOTCompensator::fromURDFtoSOT(
+        const sot::MatrixHomogeneous& signal_in, int idx) const
+{
+
+    boost::shared_ptr<sot::MatrixHomogeneous> compensation = getSOTCompensation(idx);
+    return signal_in.multiply(*compensation);
+}
 
 
 }

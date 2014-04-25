@@ -3,18 +3,18 @@
 #  Copyright 2010 CNRS
 #
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 
 project(dynamic_graph_fcl)
 
-find_package(catkin REQUIRED COMPONENTS geometric_shapes urdf tf)
+find_package(catkin REQUIRED COMPONENTS geometric_shapes urdf tf dynamic-graph dynamic-graph-python sot-core sot_cmake)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(FCL REQUIRED fcl)
 
 catkin_package(
 	INCLUDE_DIRS include
 	LIBRARIES dynamic_graph_fcl
-	DEPENDS dynamic-graph dynamic-graph-python sot-core
+	CATKIN_DEPENDS geometric_shapes urdf tf dynamic-graph dynamic-graph-python sot-core sot_cmake
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS})
@@ -34,16 +34,8 @@ add_executable(dynamic_graph_test test/test.cpp)
 target_link_libraries(dynamic_graph_test
    ${catkin_LIBRARIES} ${FCL_LIBRARIES} dynamic_graph_fcl
 )
+message("FCL_LIBRARIES IN DYNAMIC_GRAPHFCL:::  ${FCL_LIBRARIES}")
 target_link_libraries(dynamic_graph_fcl ${catkin_LIBRARIES} ${FCL_LIBRARIES})
-set(PKG_DEP dynamic-graph dynamic-graph-python sot-core)
-foreach(DEP ${PKG_DEP})
-	message("invoking dependency check for: ${DEP}")
-	pkg_check_modules(${DEP} REQUIRED ${DEP})
-	message("use dependency for:  ${${DEP}_LDFLAGS}")
-	target_link_libraries(dynamic_graph_fcl ${${DEP}_LDFLAGS})
-        target_link_libraries(dynamic_graph_test ${${DEP}_LDFLAGS})
-endforeach(DEP)
-
 
 # ADD SUBDIRECTORY FOR PYTHON WRAPPER EXPORT
 add_subdirectory(src)

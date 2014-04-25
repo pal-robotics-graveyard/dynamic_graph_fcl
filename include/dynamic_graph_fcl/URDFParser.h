@@ -12,6 +12,8 @@
 #include <geometric_shapes/shapes.h>
 #include <geometric_shapes/shape_operations.h>
 
+#include <capsule_msgs/Capsule.h>
+
 //#include <dynamic_graph_fcl/Conversions.h>
 
 
@@ -34,6 +36,7 @@ public:
     ~URDFParser();
 
     std::map<std::string, boost::shared_ptr<fcl::CollisionObject> > getCollisionObjects();
+    boost::shared_ptr<fcl::CollisionObject> getCollisionObject(std::string link_name) ;
 
     void updateLinkPosition(const std::string& link_name,const fcl::Matrix3f& rot, const fcl::Vec3f& pos);
     void updateLinkPosition(const std::string& link_name,const fcl::Transform3f& transform);
@@ -42,6 +45,8 @@ public:
     void getClosestPoints(const std::string& link_name_1,const std::string& link_name_2, fcl::Vec3f& p1, fcl::Vec3f& p2 );
 
     bool isEndeffector(const std::string& link_name) const;
+
+    void publishCapsuleMessage(const std::string& link_name);
 
 private:
     ros::NodeHandle nh_;
@@ -57,6 +62,8 @@ private:
     std::map<std::string, boost::shared_ptr<fcl::CollisionObject> > collision_objects_;
     std::map<std::string, boost::shared_ptr<fcl::Transform3f> > collision_objects_origins_;
 
+
+    ros::Publisher pub_capsule_;
 };
 
 }

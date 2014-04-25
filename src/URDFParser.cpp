@@ -1,5 +1,6 @@
 
 #include <dynamic_graph_fcl/URDFParser.h>
+
 #include <fcl/distance.h>
 #include <dynamic_graph_fcl/Conversions.h>
 
@@ -14,6 +15,8 @@ URDFParser::URDFParser(const std::string &robot_description_param, const std::ve
     model_.initParam(robot_description_param);
     parseCollisionObjects();
 
+    pub_capsule_ = nh_.advertise<capsule_msgs::Capsule>("dynamic_graph_fcl/capsules",100);
+
     std::cout << "amount of parsed collisionobjects: " << collision_objects_.size() <<std::endl;
 }
 
@@ -24,7 +27,13 @@ void URDFParser::parseCollisionObjects()
 
     for (int var = 0; var < joint_names_.size(); ++var) {
 
-        std::string link_name = model_.getJoint( joint_names_[var] )->child_link_name;
+        std::string link_name;
+        if (joint_names_[var].find("base") != std::string::npos){
+            link_name = "base_link";
+        }else{
+            link_name = model_.getJoint( joint_names_[var] )->child_link_name;
+        }
+
         boost::shared_ptr<const urdf::Link> link = getFastLink(link_name);
         boost::shared_ptr<fcl::CollisionObject> collision_object;
 
@@ -54,29 +63,46 @@ boost::shared_ptr<fcl::Transform3f> URDFParser::parseCapsule(
 
     urdf::Pose origin_tmp = link->collision->origin;
 
-    std::cerr << "collision origin for "<< link->name
+    std::cerr << "collision origin z for "<< link->name
               << "=" << link->collision->origin.position.z << std::endl;
 
     //check that!
     // This is heavily URDF dependent,
     // as this depends on my capsule decomposition, check the according URDF
-    int sign = 1;
+
+    // CHECK HERE AGAIN!!!
+    int signz = 1;
     if (link->collision->origin.position.z < 0){
-        sign = -1;
+        signz = -1;
     }
-    origin_tmp.position.z -= sign* (collisionGeometry->length/2);
+
+    double r,p,y;
+    if (link->name.find("arm_right_2") != std::string::npos){
+        origin_tmp.rotation.getRPY(r,p,y);
+        std::cerr << "arm_right_2 " << r << " " << p << " "<< y << std::endl;
+    }else if(link->name.find("arm_right_3") != std::string::npos){
+        origin_tmp.rotation.getRPY(r,p,y);
+        std::cerr << "arm_right_3 " << r << " " << p << " "<< y << std::endl;
+    }
+    origin_tmp.position.z -= signz* (collisionGeometry->length/2);
 
     boost::shared_ptr<fcl::Capsule> capsule =
             boost::shared_ptr<fcl::Capsule>(
-                new fcl::Capsule(collisionGeometry->radius, sign*collisionGeometry->length));
-
+                new fcl::Capsule(collisionGeometry->radius, signz*collisionGeometry->length));
 
     std::cerr << "capsule data; r: " << collisionGeometry->radius
-              << "l: " << collisionGeometry->length << std::endl;
-
+              << " l: " << collisionGeometry->length << std::endl;
+    std::cerr << "with origin shift: " << origin_tmp.position.x << ","
+              << origin_tmp.position.y << ","<< origin_tmp.position.z
+              << std::endl;
 
     collision_object.reset(new fcl::CollisionObject(capsule));
     return Conversions::convertToFCLTransform(origin_tmp);
+}
+
+boost::shared_ptr<fcl::CollisionObject> URDFParser::getCollisionObject(std::string link_name)
+{
+    return collision_objects_[link_name];
 }
 
 std::map<std::string, boost::shared_ptr<fcl::CollisionObject> > URDFParser::getCollisionObjects()
@@ -133,7 +159,7 @@ void URDFParser::updateLinkPosition(const std::string& link_name,
     boost::shared_ptr<fcl::Transform3f> collision_origin
             = collision_objects_origins_[link_name];
 
-    collision_object->setTransform( transform * (*collision_origin));
+    collision_object->setTransform( transform   *(*collision_origin));
 }
 
 fcl::Transform3f URDFParser::getOrigin(const std::string& link_name)
@@ -166,6 +192,27 @@ void URDFParser::getClosestPoints(const std::string &link_name_1,
     p2 = result.nearest_points[1];
 
 }
+
+
+void URDFParser::publishCapsuleMessage(const std::string& link_name) {
+
+    boost::shared_ptr<const fcl::CollisionObject> cobject = collision_objects_[link_name];
+
+    const boost::shared_ptr<const fcl::Capsule> capsule
+            = boost::dynamic_pointer_cast<const fcl::Capsule> (cobject->collisionGeometry());
+
+    geometry_msgs::Transform origin = Conversions::transformToGeometryMsg(getOrigin(link_name));
+
+    capsule_msgs::Capsule message;
+    message.linkname = link_name;
+    message.radius = (float)capsule->radius;
+    message.length = (float)capsule->lz;
+    message.origin = origin;
+
+    pub_capsule_.publish(message);
+
+}
+
 
 }
 }

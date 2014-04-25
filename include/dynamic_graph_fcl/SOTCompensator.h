@@ -1,5 +1,7 @@
 #include <ros/ros.h>
 #include <dynamic-graph/linear-algebra.h>
+#include <sot/core/matrix-homogeneous.hh>
+#include <sot/core/matrix-rotation.hh>
 
 
 namespace dynamicgraph{
@@ -23,15 +25,16 @@ public:
 
 
     void initVectorSize(const int size);
-    boost::shared_ptr<dynamicgraph::Matrix> getSOTCompensation(const int& idx) const;
+    boost::shared_ptr<sot::MatrixHomogeneous> getSOTCompensation(const int& idx) const;
     void setSOTCompensation(const std::string& joint_name, const int& idx);
-    dynamicgraph::Matrix applySOTCompensation(const dynamicgraph::Matrix& signal_in, int idx) const;
+    sot::MatrixHomogeneous fromSOTtoURDF(const sot::MatrixHomogeneous& signal_in, int idx) const;
+    sot::MatrixHomogeneous fromURDFtoSOT(const sot::MatrixHomogeneous& signal_in, int idx) const;
 
 
 private:
 
     ros::NodeHandle nh_;
-    std::vector<boost::shared_ptr<dynamicgraph::Matrix> > compensation_matrix_vec;
+    std::vector<boost::shared_ptr<sot::MatrixHomogeneous> > compensation_matrix_vec;
 
 };
 }

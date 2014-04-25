@@ -6,6 +6,8 @@
 
 #include <dynamic-graph/linear-algebra.h>
 
+#include <sot/core/matrix-homogeneous.hh>
+
 #include <geometric_shapes/shapes.h>
 #include <geometric_shapes/shape_operations.h>
 #include <tf/transform_datatypes.h>
@@ -63,8 +65,8 @@ inline dynamicgraph::Vector convertToDG(fcl::Vec3f fcl_vec){
     return dg_vec;
 }
 
-inline dynamicgraph::Matrix convertToDG(fcl::Transform3f fcl_matrix){
-    dynamicgraph::Matrix dg_mat(4,4);
+inline sot::MatrixHomogeneous convertToDG(fcl::Transform3f fcl_matrix){
+    sot::MatrixHomogeneous dg_mat;
     dg_mat.setIdentity();
 
     fcl::Matrix3f r = fcl_matrix.getRotation();
@@ -117,10 +119,10 @@ inline boost::shared_ptr<fcl::Transform3f> convertToFCLTransform(const urdf::Pos
     fcl_transform->setTranslation(trans);
 
     fcl::Matrix3f rot;
-    rot.setIdentity();
-//    double r,p,y;
-//    urdf_pose.rotation.getRPY(r,p,y);
-//    rot.setEulerYPR(y,p,r);
+//    rot.setIdentity();
+    double r,p,y;
+    urdf_pose.rotation.getRPY(r,p,y);
+    rot.setEulerYPR(y,p,r);
 
     fcl_transform->setRotation(rot);
 
@@ -138,73 +140,25 @@ inline boost::shared_ptr<fcl::Transform3f> convertToFCLTransform(const urdf::Pos
     return fcl_transform;
 }
 
-/* The DG/SOT respective the JRL-Dynamics uses a convention of rotating each joint around
-                X- AXIS
+inline tf::Transform transformToTF(const fcl::CollisionObject capsule){
+    tf::Transform transform;
 
-    This forces a de-transformation according to the URDF
-    Mandatorily this has to be changed according the each URDF or Robot
+    fcl::Transform3f transform_fcl = capsule.getTransform();
 
-    Get rid of JRL-Dynamics would make this obsolete!
-*/
-inline dynamicgraph::Matrix sot_rotation_fix(const dynamicgraph::Matrix in){
-    dynamicgraph::Matrix sot_compensation(4,4);
+    tf::Vector3 pos = tf::Vector3(transform_fcl.getTranslation()[0],transform_fcl.getTranslation()[1],transform_fcl.getTranslation()[2]);
+    transform.setOrigin(pos);
 
+    tf::Quaternion quat;
+    quat.setW(capsule.getQuatRotation().getW());
+    quat.setX(capsule.getQuatRotation().getX());
+    quat.setY(capsule.getQuatRotation().getY());
+    quat.setZ(capsule.getQuatRotation().getZ());
 
-////    sot_compensation(0,0) = 0;
-////    sot_compensation(0,1) = 0;
-////    sot_compensation(0,2) = -1;
-////    sot_compensation(0,3) = 0;
+    transform.setRotation(quat);
+    transform.setOrigin(pos);
 
-////    sot_compensation(1,0) = 0;
-////    sot_compensation(1,1) = 1;
-////    sot_compensation(1,2) = 0;
-////    sot_compensation(1,3) = 0;
-
-////    sot_compensation(2,0) = 1;
-////    sot_compensation(2,1) = 0;
-////    sot_compensation(2,2) = 0;
-////    sot_compensation(2,3) = 0;
-
-////    sot_compensation(3,0) = 0;
-////    sot_compensation(3,1) = 0;
-////    sot_compensation(3,2) = 0;
-////    sot_compensation(3,3) = 1;
-
-    sot_compensation(0,0) = 0;
-    sot_compensation(0,1) = 1;
-    sot_compensation(0,2) = 0;
-    sot_compensation(0,3) = 0;
-
-    sot_compensation(1,0) = 0;
-    sot_compensation(1,1) = 0;
-    sot_compensation(1,2) = 1;
-    sot_compensation(1,3) = 0;
-
-    sot_compensation(2,0) = 1;
-    sot_compensation(2,1) = 0;
-    sot_compensation(2,2) = 0;
-    sot_compensation(2,3) = 0;
-
-    sot_compensation(3,0) = 0;
-    sot_compensation(3,1) = 0;
-    sot_compensation(3,2) = 0;
-    sot_compensation(3,3) = 1;
-
-    return in.multiply(sot_compensation.inverse());
-
+    return transform;
 }
-
-//inline fcl::Transform3f sot_rotation_fix(fcl::Transform3f in){
-//    fcl::Transform3f sot_compensation;
-//    fcl::Matrix3f sot_rot(0, 1, 0,
-//                          0, 0, 1,
-//                          1, 0, 0);
-//    fcl::Vec3f sot_trans(0, 0, 0);
-//    sot_compensation.setRotation(sot_rot);
-//    sot_compensation.setTranslation(sot_trans);
-
-//    return in*sot_compensation;
-//}
 
 inline tf::Transform transformToTF(const dynamicgraph::Matrix& matrix){
     tf::Transform transform;
@@ -251,6 +205,25 @@ inline tf::Transform transformToTF(const dynamicgraph::Vector& vector)
     transform.setRotation(quat);
     transform.setOrigin(pos);
 
+    return transform;
+}
+
+inline geometry_msgs::Transform transformToGeometryMsg(const fcl::Transform3f fcl_transform){
+
+    geometry_msgs::Transform transform;
+    geometry_msgs::Quaternion quat;
+    quat.w = fcl_transform.getQuatRotation().getW();
+    quat.x = fcl_transform.getQuatRotation().getX();
+    quat.y = fcl_transform.getQuatRotation().getY();
+    quat.z = fcl_transform.getQuatRotation().getZ();
+
+    geometry_msgs::Vector3 trans;
+    trans.x = fcl_transform.getTranslation()[0];
+    trans.y = fcl_transform.getTranslation()[1];
+    trans.z = fcl_transform.getTranslation()[2];
+
+    transform.rotation = quat;
+    transform.translation = trans;
     return transform;
 }
 

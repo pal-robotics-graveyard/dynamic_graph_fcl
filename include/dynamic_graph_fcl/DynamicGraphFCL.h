@@ -64,16 +64,16 @@ public:
     DynamicGraphFCL(const std::string &inName);
     ~DynamicGraphFCL();
 
-
-    void set_collision_joints(const std::string& joint_collision_names);
-    void init_collisions(const std::vector<std::string>& joint_collision_names);
-
-
-    dynamicgraph::Vector& joint_state_update_function(dynamicgraph::Vector& vec, int i);
+    // exposed as python functions
+    // for backward compability
+    void setCollisionJoints(const std::string& joint_collision_names);
+    // when adding joints in a loop
+    void addCollisionJoint(const std::string& joint_name);
+    void finalizeSignals();
 
     // critical update function. For the state of the development this gets triggered for each collision pair twice!
     // optimal solution will be to set a dirty_flag when a recomputation of the FCL distance is actually needed.
-    sot::MatrixHomogeneous& closest_point_update_function(
+    sot::MatrixHomogeneous& closestPointUpdate(
             sot::MatrixHomogeneous& point,
             int i, std::string& joint_name_1,int& idx,
             std::string& joint_name_2, int& idy);
@@ -81,6 +81,16 @@ public:
     boost::shared_ptr< SignalTimeDependent<dynamicgraph::Vector, int> > debug_point_1_out;
     boost::shared_ptr< SignalTimeDependent<dynamicgraph::Vector, int> > debug_point_2_out;
 
+    void enableTF(const bool& enable){
+        tf_topic_enabled_ = enable;
+    }
+
+    void enableCapsuleTopic(const bool& enable){
+        ros_topic_enabled_ = enable;
+    }
+
+    bool tf_topic_enabled_;
+    bool ros_topic_enabled_;
 private:
 
 
@@ -117,7 +127,6 @@ private:
     void fillCollisionMatrix(int idx, int idy);
 
     void updateURDFParser(const dynamicgraph::Matrix& op_point, int id)const;
-
 
 };
 } // namespace FCL

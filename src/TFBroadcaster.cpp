@@ -19,7 +19,7 @@ void TFBroadcaster::sendTransform(const std::string link_name,
     // default for parent link should be "base_link"
     br_.sendTransform(
                 tf::StampedTransform(transform, ros::Time::now(), "base_link",
-                                     "entFCL_"+link_name));
+                                    link_name));
 }
 
 bool TFBroadcaster::replace(std::string& str, const std::string& from, const std::string& to) {
@@ -39,7 +39,7 @@ void TFBroadcaster::sendTransform(const std::string link_name,
     // default for parent link should be "base_link"
     br_.sendTransform(
                 tf::StampedTransform(transform, ros::Time::now(), parent,
-                                     "entFCL_"+link_name));
+                                     link_name));
 }
 
 
