@@ -89,8 +89,7 @@ public:
         ros_topic_enabled_ = enable;
     }
 
-    bool tf_topic_enabled_;
-    bool ros_topic_enabled_;
+
 private:
 
 
@@ -99,9 +98,12 @@ private:
     int joint_collision_size_;
 
     boost::shared_ptr< TFBroadcaster> tfBroadcaster_;
-    boost::shared_ptr< URDFParser> urdfParser_;
     boost::shared_ptr< SOTCompensator> sotCompensator_;
+    bool tf_topic_enabled_;
+    bool ros_topic_enabled_;   
 
+    boost::shared_ptr< URDFParser> urdfParser_;
+    
     std::vector<boost::shared_ptr< SignalPtr <sot::MatrixHomogeneous, int> > >op_point_in_vec_;
 
 
