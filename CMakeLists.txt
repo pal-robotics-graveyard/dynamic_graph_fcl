@@ -6,10 +6,15 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 
 project(dynamic_graph_fcl)
-string(REPLACE "-Woverloaded-virtual" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-string(REPLACE "-Werror=overloaded-virtual" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-string(REPLACE "-Werror=conversion-null" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-string(REPLACE "-Wconversion-null" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+
+if (${CMAKE_CXX_FLAGS})
+    string(REPLACE "-Woverloaded-virtual" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+    string(REPLACE "-Werror=overloaded-virtual" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+    string(REPLACE "-Werror=conversion-null" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+    string(REPLACE "-Wconversion-null" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+else (${CMAKE_CXX_FLAGS})
+    message("Ignoring warning suppression, CMAKE_CXX_FLAGS not set!"})
+endif(${CMAKE_CXX_FLAGS})
 
 find_package(catkin REQUIRED COMPONENTS geometric_shapes urdf tf dynamic-graph dynamic-graph-python sot-core sot_cmake)
 find_package(PkgConfig REQUIRED)
