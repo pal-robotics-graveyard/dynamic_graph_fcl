@@ -3,11 +3,11 @@
 
 #include <ros/ros.h>
 #include <urdf/model.h>
-#include <fcl/collision_object.h>
+#include <fcl_capsule/collision_object.h>
 
-#include <fcl/BV/OBBRSS.h>
-#include <fcl/BVH/BVH_model.h>
-#include <fcl/shape/geometric_shapes.h>
+#include <fcl_capsule/BV/OBBRSS.h>
+#include <fcl_capsule/BVH/BVH_model.h>
+#include <fcl_capsule/shape/geometric_shapes.h>
 
 #include <geometric_shapes/shapes.h>
 #include <geometric_shapes/shape_operations.h>

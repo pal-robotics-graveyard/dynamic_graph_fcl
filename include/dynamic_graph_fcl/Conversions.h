@@ -2,7 +2,7 @@
 #define CONVERSIONS_H
 
 #include <urdf/model.h>
-#include <fcl/collision_object.h>
+#include <fcl_capsule/collision_object.h>
 
 #include <dynamic-graph/linear-algebra.h>
 

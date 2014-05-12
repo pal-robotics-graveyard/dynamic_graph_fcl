@@ -1,7 +1,7 @@
 
 #include <dynamic_graph_fcl/URDFParser.h>
 
-#include <fcl/distance.h>
+#include <fcl_capsule/distance.h>
 #include <dynamic_graph_fcl/Conversions.h>
 
 namespace dynamicgraph{
