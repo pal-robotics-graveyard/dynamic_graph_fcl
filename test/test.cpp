@@ -32,7 +32,7 @@ DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN (MyEntity, "MyEntity");
 int main(void){
 
     using namespace dynamicgraph;
-    using     namespace FCL;
+    using     namespace fcl;
 
     DynamicGraphFCL* fcl =
             dynamic_cast<DynamicGraphFCL*>(

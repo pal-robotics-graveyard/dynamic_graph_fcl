@@ -3,7 +3,7 @@
 
 namespace dynamicgraph{
 
-namespace FCL{
+namespace fcl{
 
 
 SOTCompensator::SOTCompensator():

@@ -6,7 +6,7 @@
 
 namespace dynamicgraph{
 
-namespace FCL{
+namespace fcl{
 
 
 /* The DG/SOT respective the JRL-Dynamics uses a convention of rotating each joint around

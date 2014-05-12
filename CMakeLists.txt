@@ -21,7 +21,7 @@ catkin_package(
 	CATKIN_DEPENDS geometric_shapes urdf tf dynamic-graph dynamic-graph-python sot-core sot_cmake fcl_capsule
 )
 
-message("include dirs of dynamicgraphfcl:::::::: ${catkin_INCLUDE_DIRS}")
+message("include dirs of dynamicgraphfcl_capsule:::::::: ${catkin_INCLUDE_DIRS}")
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 

@@ -10,7 +10,7 @@
 
 namespace dynamicgraph{
 
-namespace FCL{
+namespace fcl{
 
 namespace SignalHelper{
 

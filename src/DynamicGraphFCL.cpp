@@ -52,7 +52,7 @@
 
 
 namespace dynamicgraph {
-namespace FCL {
+namespace fcl {
 
 DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(DynamicGraphFCL, "DynamicGraphFCL");
 
@@ -263,7 +263,7 @@ sot::MatrixHomogeneous& DynamicGraphFCL::closestPointUpdate(
 
 
     // in URDF orientation
-    fcl::Vec3f closest_point_1, closest_point_2;
+    fcl_capsule::Vec3f closest_point_1, closest_point_2;
     urdfParser_->getClosestPoints(joint_collision_names_[idx],
                                   joint_collision_names_[idy],
                                   closest_point_1,
@@ -338,7 +338,7 @@ void DynamicGraphFCL::updateURDFParser(const dynamicgraph::Matrix& op_point_sig,
                 *(Conversions::convertToFCLTransform(urdf_frame)));
 
     if (tf_topic_enabled_){
-        boost::shared_ptr<fcl::CollisionObject> co = urdfParser_->getCollisionObject(joint_collision_names_[id]);
+        boost::shared_ptr<fcl_capsule::CollisionObject> co = urdfParser_->getCollisionObject(joint_collision_names_[id]);
         sot::MatrixHomogeneous capsule_origin = Conversions::convertToDG(co->getTransform());
         tfBroadcaster_->sendTransform("capsule_origin"+joint_collision_names_[id], Conversions::transformToTF(capsule_origin));
 
@@ -349,6 +349,6 @@ void DynamicGraphFCL::updateURDFParser(const dynamicgraph::Matrix& op_point_sig,
     }
 }
 
-} // namespace FCL
+} // namespace fcl
 } // namespace dynamicgraph
 

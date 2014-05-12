@@ -53,7 +53,7 @@
 
 
 namespace dynamicgraph {
-namespace FCL {
+namespace fcl {
 class DynamicGraphFCL : public Entity
 {
 public:
@@ -131,6 +131,6 @@ private:
     void updateURDFParser(const dynamicgraph::Matrix& op_point, int id)const;
 
 };
-} // namespace FCL
+} // namespace fcl
 } // namespace dynamicgraph
 #endif // DYNAMIC_GRAPH_FCL_HH

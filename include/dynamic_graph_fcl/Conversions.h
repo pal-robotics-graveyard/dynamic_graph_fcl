@@ -14,7 +14,7 @@
 
 namespace dynamicgraph{
 
-namespace FCL{
+namespace fcl{
 
 namespace Conversions{
 
@@ -27,9 +27,9 @@ inline void split(std::vector<std::string> &tokens, const std::string &text, cha
     tokens.push_back(text.substr(start));
 }
 
-inline fcl::Vec3f extractFCLPosition(dynamicgraph::Matrix m){
+inline fcl_capsule::Vec3f extractFCLPosition(dynamicgraph::Matrix m){
 
-    fcl::Vec3f pos;
+    fcl_capsule::Vec3f pos;
     pos[0] = m.elementAt(0,3);
     pos[1] = m.elementAt(1,3);
     pos[2] = m.elementAt(2,3);
@@ -37,9 +37,9 @@ inline fcl::Vec3f extractFCLPosition(dynamicgraph::Matrix m){
     return pos;
 }
 
-inline fcl::Matrix3f extractFCLRotation(dynamicgraph::Matrix m){
+inline fcl_capsule::Matrix3f extractFCLRotation(dynamicgraph::Matrix m){
 
-    fcl::Matrix3f rot;
+    fcl_capsule::Matrix3f rot;
     rot(0,0) = m.elementAt(0,0);
     rot(0,1) = m.elementAt(0,1);
     rot(0,2) = m.elementAt(0,2);
@@ -56,7 +56,7 @@ inline fcl::Matrix3f extractFCLRotation(dynamicgraph::Matrix m){
 
 }
 
-inline dynamicgraph::Vector convertToDG(fcl::Vec3f fcl_vec){
+inline dynamicgraph::Vector convertToDG(fcl_capsule::Vec3f fcl_vec){
     dynamicgraph::Vector dg_vec(3);
     dg_vec(0) = fcl_vec[0];
     dg_vec(1) = fcl_vec[1];
@@ -65,12 +65,12 @@ inline dynamicgraph::Vector convertToDG(fcl::Vec3f fcl_vec){
     return dg_vec;
 }
 
-inline sot::MatrixHomogeneous convertToDG(fcl::Transform3f fcl_matrix){
+inline sot::MatrixHomogeneous convertToDG(fcl_capsule::Transform3f fcl_matrix){
     sot::MatrixHomogeneous dg_mat;
     dg_mat.setIdentity();
 
-    fcl::Matrix3f r = fcl_matrix.getRotation();
-    fcl::Vec3f t = fcl_matrix.getTranslation();
+    fcl_capsule::Matrix3f r = fcl_matrix.getRotation();
+    fcl_capsule::Vec3f t = fcl_matrix.getTranslation();
 
     for (int i = 0; i < 3; ++i) {
         dg_mat.elementAt(i,3) = t[i];
@@ -81,14 +81,14 @@ inline sot::MatrixHomogeneous convertToDG(fcl::Transform3f fcl_matrix){
     return dg_mat;
 }
 
-inline boost::shared_ptr<fcl::Transform3f> convertToFCLTransform(const dynamicgraph::Matrix& matrix){
-    boost::shared_ptr<fcl::Transform3f> fcl_transform = boost::shared_ptr<fcl::Transform3f>(
-                new fcl::Transform3f());
+inline boost::shared_ptr<fcl_capsule::Transform3f> convertToFCLTransform(const dynamicgraph::Matrix& matrix){
+    boost::shared_ptr<fcl_capsule::Transform3f> fcl_transform = boost::shared_ptr<fcl_capsule::Transform3f>(
+                new fcl_capsule::Transform3f());
 
-    fcl::Vec3f trans;
+    fcl_capsule::Vec3f trans;
     trans.setValue(matrix.elementAt(0,3),matrix.elementAt(1,3),matrix.elementAt(2,3) );
 
-    fcl::Matrix3f rot;
+    fcl_capsule::Matrix3f rot;
     rot.setValue(
                 matrix.elementAt(0,0),
                 matrix.elementAt(0,1),
@@ -110,15 +110,15 @@ inline boost::shared_ptr<fcl::Transform3f> convertToFCLTransform(const dynamicgr
     return fcl_transform;
 }
 
-inline boost::shared_ptr<fcl::Transform3f> convertToFCLTransform(const urdf::Pose& urdf_pose){
+inline boost::shared_ptr<fcl_capsule::Transform3f> convertToFCLTransform(const urdf::Pose& urdf_pose){
 
-    boost::shared_ptr<fcl::Transform3f> fcl_transform = boost::shared_ptr<fcl::Transform3f>(
-                new fcl::Transform3f());
-    fcl::Vec3f trans;
+    boost::shared_ptr<fcl_capsule::Transform3f> fcl_transform = boost::shared_ptr<fcl_capsule::Transform3f>(
+                new fcl_capsule::Transform3f());
+    fcl_capsule::Vec3f trans;
     trans.setValue(urdf_pose.position.x,urdf_pose.position.y,urdf_pose.position.z);
     fcl_transform->setTranslation(trans);
 
-    fcl::Matrix3f rot;
+    fcl_capsule::Matrix3f rot;
 //    rot.setIdentity();
     double r,p,y;
     urdf_pose.rotation.getRPY(r,p,y);
@@ -140,10 +140,10 @@ inline boost::shared_ptr<fcl::Transform3f> convertToFCLTransform(const urdf::Pos
     return fcl_transform;
 }
 
-inline tf::Transform transformToTF(const fcl::CollisionObject capsule){
+inline tf::Transform transformToTF(const fcl_capsule::CollisionObject capsule){
     tf::Transform transform;
 
-    fcl::Transform3f transform_fcl = capsule.getTransform();
+    fcl_capsule::Transform3f transform_fcl = capsule.getTransform();
 
     tf::Vector3 pos = tf::Vector3(transform_fcl.getTranslation()[0],transform_fcl.getTranslation()[1],transform_fcl.getTranslation()[2]);
     transform.setOrigin(pos);
@@ -208,7 +208,7 @@ inline tf::Transform transformToTF(const dynamicgraph::Vector& vector)
     return transform;
 }
 
-inline geometry_msgs::Transform transformToGeometryMsg(const fcl::Transform3f fcl_transform){
+inline geometry_msgs::Transform transformToGeometryMsg(const fcl_capsule::Transform3f fcl_transform){
 
     geometry_msgs::Transform transform;
     geometry_msgs::Quaternion quat;

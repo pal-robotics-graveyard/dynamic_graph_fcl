@@ -2,7 +2,7 @@
 
 namespace dynamicgraph{
 
-namespace FCL{
+namespace fcl{
 
 class TFBroadcaster{
 
