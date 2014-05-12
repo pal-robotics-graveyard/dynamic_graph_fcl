@@ -7,24 +7,21 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 
 project(dynamic_graph_fcl)
 
-if (${CMAKE_CXX_FLAGS})
-    string(REPLACE "-Woverloaded-virtual" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-    string(REPLACE "-Werror=overloaded-virtual" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-    string(REPLACE "-Werror=conversion-null" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-    string(REPLACE "-Wconversion-null" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-else (${CMAKE_CXX_FLAGS})
-    message("Ignoring warning suppression, CMAKE_CXX_FLAGS not set!"})
-endif(${CMAKE_CXX_FLAGS})
+string(REPLACE "-Woverloaded-virtual" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+string(REPLACE "-Werror=overloaded-virtual" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+string(REPLACE "-Werror=conversion-null" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+string(REPLACE "-Wconversion-null" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
-find_package(catkin REQUIRED COMPONENTS geometric_shapes urdf tf dynamic-graph dynamic-graph-python sot-core sot_cmake)
+find_package(catkin REQUIRED COMPONENTS geometric_shapes urdf tf dynamic-graph dynamic-graph-python sot-core sot_cmake fcl_capsule)
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(FCL REQUIRED fcl)
 
 catkin_package(
 	INCLUDE_DIRS include
 	LIBRARIES dynamic_graph_fcl
-	CATKIN_DEPENDS geometric_shapes urdf tf dynamic-graph dynamic-graph-python sot-core sot_cmake
+	CATKIN_DEPENDS geometric_shapes urdf tf dynamic-graph dynamic-graph-python sot-core sot_cmake fcl_capsule
 )
+
+message("include dirs of dynamicgraphfcl:::::::: ${catkin_INCLUDE_DIRS}")
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
@@ -35,16 +32,17 @@ add_library(dynamic_graph_fcl
 	include/dynamic_graph_fcl/DynamicGraphFCL.h include/dynamic_graph_fcl/URDFParser.h
         include/dynamic_graph_fcl/Conversions.h include/dynamic_graph_fcl/SignalHelper.h
 )
+#link_directories(${catkin_LIBRARY_DIRS})
+message("bnlaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ${catkin_LIBRARIES}")
+target_link_libraries(dynamic_graph_fcl ${catkin_LIBRARIES})
 
 ## Declare a cpp executable
 add_executable(dynamic_graph_test test/test.cpp)
 
-## Specify libraries to link a library or executable target against
+## Specify libraries to link a library or executablce target against
 target_link_libraries(dynamic_graph_test
-   ${catkin_LIBRARIES} ${FCL_LIBRARIES} dynamic_graph_fcl
+   ${catkin_LIBRARIES} dynamic_graph_fcl
 )
-message("FCL_LIBRARIES IN DYNAMIC_GRAPHFCL:::  ${FCL_LIBRARIES}")
-target_link_libraries(dynamic_graph_fcl ${catkin_LIBRARIES} ${FCL_LIBRARIES})
 
 # ADD SUBDIRECTORY FOR PYTHON WRAPPER EXPORT
 add_subdirectory(src)

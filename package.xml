@@ -18,6 +18,7 @@
   <build_depend>tf</build_depend>
   <build_depend>sot-core</build_depend>
   <build_depend>sot_cmake</build_depend>
+  <build_depend>fcl_capsule</build_depend>
 
   <run_depend>dynamic-graph</run_depend>
   <run_depend>dynamic-graph-python</run_depend>
@@ -26,5 +27,6 @@
   <run_depend>tf</run_depend>
   <run_depend>sot-core</run_depend>
   <run_depend>sot_cmake</run_depend>
+  <run_depend>fcl_capsule</run_depend>
 
 </package>
